@@ -39,6 +39,11 @@ capability-registry <--- official docs updater + human-reviewed fixtures
 - `validateArtifacts(GenerateResult): string[]`
 - `safeRelativePath(string): string | null`
 
+The canonical `Blueprint` shape is versioned in
+[`schemas/blueprint-0.1.schema.json`](../schemas/blueprint-0.1.schema.json). The schema validates
+data shape and allowed values; it does not enforce permissions in a target runtime. Release gates are
+defined in [`docs/RELEASE_READINESS.md`](RELEASE_READINESS.md).
+
 `DesignRequest.securityProfile` selects the deterministic `baseline` or `strict` security
 requirements recorded in `Blueprint.security`. The profile is a declarative requirement and test
 plan; target adapters must enforce it and report unsupported enforcement visibly.
