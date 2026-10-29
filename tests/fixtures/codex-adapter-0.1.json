@@ -1,0 +1,17 @@
+{
+  "fixtureVersion": "0.1",
+  "checkedAt": "2026-10-30",
+  "sources": {
+    "instructions": "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+    "subagents": "https://learn.chatgpt.com/docs/agent-configuration/subagents",
+    "skills": "https://agentskills.io/specification"
+  },
+  "formats": {
+    "instructionFiles": ["AGENTS.md"],
+    "skillRoot": ".agents/skills",
+    "skillRequiredFrontmatter": ["name", "description"],
+    "subagentRoot": ".codex/agents",
+    "subagentRequiredKeys": ["name", "description", "developer_instructions"]
+  },
+  "runtimeEvidence": "not-tested"
+}

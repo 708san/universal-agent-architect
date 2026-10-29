@@ -1,17 +1,17 @@
 {
   "schemaVersion": "0.1",
-  "checkedAt": "2026-10-29",
+  "checkedAt": "2026-10-30",
   "entries": [
     {
       "target": "codex",
       "edition": "CLI/IDE",
       "version": "unknown",
-      "checkedAt": "2026-10-29",
+      "checkedAt": "2026-10-30",
       "status": "partial",
       "sourceUrls": [
         "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
         "https://learn.chatgpt.com/docs/agent-configuration/subagents",
-        "https://learn.chatgpt.com/docs/build-skills"
+        "https://agentskills.io/specification"
       ],
       "capabilities": {
         "instructions": "partial",
@@ -19,8 +19,8 @@
         "subagents": "partial",
         "mcp": "unknown"
       },
-      "fixtureIds": ["tests/fixtures/sample-python.json", "tests/fixture-integration.test.mjs"],
-      "notes": "Prototype renderer covers basic AGENTS.md, Skills and an optional read-only reviewer; MCP rendering is not verified."
+      "fixtureIds": ["tests/fixtures/sample-python.json", "tests/fixture-integration.test.mjs", "tests/fixtures/codex-adapter-0.1.json", "tests/codex-adapter.test.mjs"],
+      "notes": "Renderer and validators cover documented AGENTS.md, Agent Skills and custom-agent TOML formats. Runtime loading, MCP rendering and permission enforcement are not verified."
     },
     {
       "target": "claude-code",
