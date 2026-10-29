@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "0.1",
+  "checkedAt": "2026-10-29",
+  "entries": [
+    {
+      "target": "codex",
+      "edition": "CLI/IDE",
+      "version": "unknown",
+      "checkedAt": "2026-10-29",
+      "status": "partial",
+      "sourceUrls": [
+        "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+        "https://learn.chatgpt.com/docs/agent-configuration/subagents",
+        "https://learn.chatgpt.com/docs/build-skills"
+      ],
+      "capabilities": {
+        "instructions": "partial",
+        "skills": "partial",
+        "subagents": "partial",
+        "mcp": "unknown"
+      },
+      "fixtureIds": ["tests/fixtures/sample-python.json", "tests/fixture-integration.test.mjs"],
+      "notes": "Prototype renderer covers basic AGENTS.md, Skills and an optional read-only reviewer; MCP rendering is not verified."
+    },
+    {
+      "target": "claude-code",
+      "edition": "CLI",
+      "version": "unknown",
+      "checkedAt": "2026-10-29",
+      "status": "planned",
+      "sourceUrls": [],
+      "capabilities": {
+        "instructions": "unknown",
+        "skills": "unknown",
+        "subagents": "unknown",
+        "mcp": "unknown"
+      },
+      "fixtureIds": [],
+      "notes": "Target family is planned; no renderer or verified fixture is included."
+    },
+    {
+      "target": "gemini-cli",
+      "edition": "CLI",
+      "version": "unknown",
+      "checkedAt": "2026-10-29",
+      "status": "planned",
+      "sourceUrls": [],
+      "capabilities": {
+        "instructions": "unknown",
+        "skills": "unknown",
+        "subagents": "unknown",
+        "mcp": "unknown"
+      },
+      "fixtureIds": [],
+      "notes": "Target family is planned; no renderer or verified fixture is included."
+    },
+    {
+      "target": "antigravity",
+      "edition": "unknown",
+      "version": "unknown",
+      "checkedAt": "2026-10-29",
+      "status": "unknown",
+      "sourceUrls": [],
+      "capabilities": {
+        "instructions": "unknown",
+        "skills": "unknown",
+        "subagents": "unknown",
+        "mcp": "unknown"
+      },
+      "fixtureIds": [],
+      "notes": "Native paths and capabilities must be verified before implementation."
+    },
+    {
+      "target": "chatgpt",
+      "edition": "browser/plugin",
+      "version": "unknown",
+      "checkedAt": "2026-10-29",
+      "status": "planned",
+      "sourceUrls": [
+        "https://developers.openai.com/plugins/quickstart"
+      ],
+      "capabilities": {
+        "instructions": "unknown",
+        "skills": "unknown",
+        "subagents": "unsupported",
+        "mcp": "unknown"
+      },
+      "fixtureIds": [],
+      "notes": "Browser/plugin capabilities depend on product and plan; do not assume Codex agent equivalence."
+    }
+  ]
+}

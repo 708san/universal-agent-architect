@@ -1,5 +1,11 @@
 # Platform capability registry — policy and status
 
+The machine-readable snapshot is [`data/capability-registry-0.1.json`](../data/capability-registry-0.1.json)
+and its structural contract is [`schemas/capability-registry-0.1.schema.json`](../schemas/capability-registry-0.1.schema.json).
+It is a reviewed snapshot, not an automatic claim of latest support. `verified` and `partial` entries
+must include an official source URL and a local fixture; `planned` and `unknown` entries must not be
+rendered as supported.
+
 Checked: 2026-10-29. **Supported in core** != **planned target**. Product and subscription differences must be recorded.
 
 | Target | Local project instruction | Skill | Custom subagent | MCP | Renderer in prototype |

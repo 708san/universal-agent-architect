@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements } from '../dist/core.js';
+import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements, validateBlueprint } from '../dist/core.js';
 
 test('sensitive paths and traversal are filtered', () => {
   for (const p of ['.env','.env.local','folder/.env.production','folder/../etc/passwd','/etc/passwd','C:/secret','dir/.ssh/key','dir/private/data','dir/tls.pem']) assert.equal(safeRelativePath(p), null);
@@ -66,6 +66,17 @@ test('invalid security requirements fail closed during artifact generation', () 
   const result = generateArtifacts(invalid);
   assert.equal(result.supported, false);
   assert.match(result.reason, /Network policy/);
+});
+test('malformed Blueprints fail closed before rendering', () => {
+  const facts = analyzeProject({ paths: [] });
+  const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });
+  const invalid = { ...blueprint, extra: 'not allowed', agents: [], security: { ...blueprint.security, requiredApprovals: undefined } };
+  assert.ok(validateBlueprint(invalid).some(problem => problem.includes('at least one agent')));
+  assert.ok(validateBlueprint(invalid).some(problem => problem.includes('Required approvals')));
+  assert.ok(validateBlueprint(invalid).some(problem => problem.includes('unknown field: extra')));
+  const result = generateArtifacts(invalid);
+  assert.equal(result.supported, false);
+  assert.match(result.reason, /at least one agent/);
 });
 test('single agent default and review skill generation', () => {
   const facts=analyzeProject({paths:['src/app.ts','tests/app.test.ts']});

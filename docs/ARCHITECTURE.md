@@ -62,5 +62,9 @@ A future `scanProject()` belongs outside core because it accesses the filesystem
 - Capability facts are versioned data with `source_url`, `checked_at`, `verification_status` and applicability scope.
 - Proposed updates need local schema validation + fixtures + review before activation; never execute fetched code.
 
+The initial offline snapshot and schema are stored in
+[`data/capability-registry-0.1.json`](../data/capability-registry-0.1.json) and
+[`schemas/capability-registry-0.1.schema.json`](../schemas/capability-registry-0.1.schema.json).
+
 ## Decisions
 See `docs/decisions/0001-local-first-pure-core.md` and `docs/decisions/0002-minimal-codex-harness.md`.
