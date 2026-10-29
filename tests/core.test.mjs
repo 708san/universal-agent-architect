@@ -111,6 +111,30 @@ test('single agent default and review skill generation', () => {
   assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/Required security checks/);
   assert.match(result.files.find(f=>f.path==='.agents/skills/code-review/SKILL.md').content,/Do not access secrets/);
 });
+
+test('generation manifest validation fails closed for unsafe or inconsistent metadata', () => {
+  const facts = analyzeProject({ paths: ['src/app.ts'] });
+  const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });
+  const generated = generateArtifacts(blueprint);
+  const manifestFile = generated.files.find(file => file.path === 'UAA-MANIFEST.json');
+  assert.ok(manifestFile);
+
+  const withManifest = (changes) => ({
+    ...generated,
+    files: generated.files.map(file => file.path === 'UAA-MANIFEST.json'
+      ? { ...file, content: JSON.stringify({ ...JSON.parse(manifestFile.content), ...changes }) }
+      : file),
+  });
+
+  assert.ok(validateArtifacts(withManifest({ files: ['AGENTS.md', '../escape', 'UAA-MANIFEST.json'] })).some(problem => problem.includes('manifest')));
+  assert.ok(validateArtifacts(withManifest({ files: ['AGENTS.md', 'AGENTS.md', 'UAA-MANIFEST.json'] })).some(problem => problem.includes('manifest')));
+  assert.ok(validateArtifacts(withManifest({ files: ['UAA-MANIFEST.json'] })).some(problem => problem.includes('manifest')));
+  assert.ok(validateArtifacts(withManifest({ sourceUrls: ['http://example.test'] })).some(problem => problem.includes('manifest')));
+  assert.ok(validateArtifacts(withManifest({ sourceUrls: ['https://user:password@example.test'] })).some(problem => problem.includes('manifest')));
+  assert.ok(validateArtifacts(withManifest({ securityProfile: 'unsafe' })).some(problem => problem.includes('manifest')));
+  assert.ok(validateArtifacts(withManifest({ verificationStatus: 'verified-but-unknown' })).some(problem => problem.includes('manifest')));
+});
+
 test('unimplemented provider fails clearly instead of creating invalid files', () => {
   const f=analyzeProject({paths:[]});
   const result=generateArtifacts(proposeBlueprint(f,{target:'chatgpt',workType:'coding'}));
