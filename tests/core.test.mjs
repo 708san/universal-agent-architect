@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements, validateBlueprint } from '../dist/core.js';
+import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements, validateBlueprint, findOutputCollisions } from '../dist/core.js';
 
 test('sensitive paths and traversal are filtered', () => {
   for (const p of ['.env','.env.local','folder/.env.production','folder/../etc/passwd','/etc/passwd','C:/secret','dir/.ssh/key','dir/private/data','dir/tls.pem']) assert.equal(safeRelativePath(p), null);
@@ -13,6 +13,17 @@ test('safe manifest detection is deterministic and excludes content from report'
   assert.ok(report.frameworks.includes('fastapi'));
   assert.equal(report.hasTests,true);
   assert.ok(!JSON.stringify(report).includes('should-not-leak'));
+});
+
+test('existing agent configuration is inventoried as paths only', () => {
+  const report = analyzeProject({ paths: [
+    'AGENTS.md', 'nested/CLAUDE.md', '.agents/skills/review/SKILL.md', '.codex/config.toml', '.codex/agents/reviewer.toml',
+  ] });
+  assert.deepEqual(report.existingInstructionPaths, ['AGENTS.md', 'nested/CLAUDE.md']);
+  assert.deepEqual(report.existingSkillPaths, ['.agents/skills/review/SKILL.md']);
+  assert.deepEqual(report.existingSettingsPaths, ['.codex/agents/reviewer.toml', '.codex/config.toml']);
+  assert.equal(report.hasExistingAgentInstructions, true);
+  assert.equal(report.hasExistingSkills, true);
 });
 
 test('browser-selected paths normalize like CLI-relative paths', () => {
@@ -66,6 +77,10 @@ test('invalid security requirements fail closed during artifact generation', () 
   const result = generateArtifacts(invalid);
   assert.equal(result.supported, false);
   assert.match(result.reason, /Network policy/);
+});
+test('output collision detection is safe and deterministic', () => {
+  const files = [{ path: 'AGENTS.md', content: 'x' }, { path: '../escape', content: 'y' }];
+  assert.deepEqual(findOutputCollisions(['AGENTS.md', '../escape', '.env'], files), ['AGENTS.md']);
 });
 test('malformed Blueprints fail closed before rendering', () => {
   const facts = analyzeProject({ paths: [] });

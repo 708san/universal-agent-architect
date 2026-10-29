@@ -17,6 +17,9 @@
     "hasGitHubActions": false,
     "hasExistingAgentInstructions": false,
     "hasExistingSkills": false,
+    "existingInstructionPaths": [],
+    "existingSkillPaths": [],
+    "existingSettingsPaths": [],
     "warnings": [
       "Static structural analysis only; no source code execution or semantic correctness claims.",
       "Path inventory may reveal filenames: review before sharing this report with cloud AI."

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { lstat, readdir, readFile, mkdir, writeFile, access, realpath } from 'node:fs/promises';
 import path from 'node:path';
-import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts, safeRelativePath } from '../dist/core.js';
+import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts, safeRelativePath, findOutputCollisions } from '../dist/core.js';
 
 const ignored = new Set(['node_modules', '.git', '.env', '.ssh', '.aws', '.npmrc', '.venv', 'venv', 'dist', 'coverage', 'build', '.next', 'secrets', 'private']);
+const allowedHiddenDirectories = new Set(['.github', '.codex', '.agents']);
 const manifestNames = ['package.json', 'pyproject.toml', 'requirements.txt'];
 const MAX_DEPTH = 8;
 const MAX_FILES = 5_000;
@@ -16,7 +17,7 @@ async function scan(dir) {
   const shouldSkip = entry => {
     const lower = entry.name.toLowerCase();
     return ignored.has(lower) || lower.startsWith('.env') || /\.(pem|key|p12|pfx)$/i.test(entry.name)
-      || (entry.name.startsWith('.') && entry.name !== '.github');
+      || (entry.name.startsWith('.') && !allowedHiddenDirectories.has(lower));
   };
   const isInsideRoot = async candidate => {
     const resolved = await realpath(candidate).catch(() => null);
@@ -57,11 +58,13 @@ async function scan(dir) {
   await walk(); return { paths, manifests, warnings };
 }
 async function main() {
-  const [command = 'help', folder = '.', target = 'codex', securityProfile = 'baseline'] = process.argv.slice(2);
+  const [command = 'help', folder = '.', target = 'codex', securityProfile = 'baseline', ...options] = process.argv.slice(2);
+  const dryRun = options.includes('--dry-run');
   if (command !== 'analyze' && command !== 'generate') {
-    console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict]');
+    console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run]');
     return;
   }
+  if (options.some(option => option !== '--dry-run') || (dryRun && command !== 'generate')) throw new Error('The --dry-run option is only available for generate.');
   if (securityProfile !== 'baseline' && securityProfile !== 'strict') throw new Error('Security profile must be baseline or strict');
   const abs = path.resolve(folder);
   if (!(await lstat(abs)).isDirectory()) throw new Error('Expected a directory');
@@ -73,6 +76,29 @@ async function main() {
   const issues = validateArtifacts(rendered);
   if (issues.length) throw new Error(issues.join('; '));
   const out = path.resolve('generated', path.basename(abs));
+  const existingOutputPaths = [];
+  for (const file of rendered.files) {
+    const dest = path.join(out, file.path);
+    try { await access(dest); existingOutputPaths.push(file.path); }
+    catch (e) { if (e.code !== 'ENOENT') throw e; }
+  }
+  const collisions = findOutputCollisions(existingOutputPaths, rendered.files);
+  if (dryRun) {
+    console.log(JSON.stringify({
+      mode: 'dry-run',
+      stagingRoot: path.relative(process.cwd(), out) || '.',
+      facts,
+      blueprint,
+      rendering: {
+        supported: rendered.supported,
+        proposedFiles: rendered.files.map(file => file.path),
+        collisions,
+        problems: validateArtifacts(rendered),
+      },
+    }, null, 2));
+    return;
+  }
+  if (collisions.length) throw new Error(`Refusing overwrite: ${collisions.join(', ')}`);
   for (const file of rendered.files) {
     if (!safeRelativePath(file.path)) throw new Error('Unsafe path');
     const dest = path.join(out, file.path);

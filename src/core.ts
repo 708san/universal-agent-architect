@@ -34,6 +34,9 @@ export interface ProjectFacts {
   hasGitHubActions: boolean;
   hasExistingAgentInstructions: boolean;
   hasExistingSkills: boolean;
+  existingInstructionPaths: string[];
+  existingSkillPaths: string[];
+  existingSettingsPaths: string[];
   warnings: string[];
 }
 export interface ProjectInput {
@@ -269,17 +272,21 @@ export function analyzeProject(input: ProjectInput): ProjectFacts {
   for (const name of ['fastapi','pytest','django','flask']) {
     if (new RegExp(`(^|[^a-z])${name}([^a-z]|$)`, 'im').test(py)) frameworks.add(name);
   }
-  const names = new Set(unique);
   const hasTests = unique.some(p => /(^|\/)(tests?|__tests__)(\/|$)/i.test(p) || /(^|\/)(pytest\.ini|vitest\.config\.[jt]s)$/i.test(p));
-  const hasExistingSkills = unique.some(p => /(^|\/)skills\/[^/]+\/SKILL\.md$/.test(p));
+  const existingInstructionPaths = unique.filter(p => /(^|\/)(AGENTS|CLAUDE|GEMINI)\.md$/i.test(p)).sort();
+  const existingSkillPaths = unique.filter(p => /(^|\/)(?:\.agents\/skills|skills)\/[^/]+\/SKILL\.md$/i.test(p)).sort();
+  const existingSettingsPaths = unique.filter(p => /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(p)).sort();
   return {
     filesSeen: unique.length,
     languages: [...languages].sort(),
     frameworks: [...frameworks].sort(),
     hasTests,
     hasGitHubActions: unique.some(p => p.startsWith('.github/workflows/')),
-    hasExistingAgentInstructions: names.has('AGENTS.md') || names.has('CLAUDE.md') || names.has('GEMINI.md'),
-    hasExistingSkills,
+    hasExistingAgentInstructions: existingInstructionPaths.length > 0,
+    hasExistingSkills: existingSkillPaths.length > 0,
+    existingInstructionPaths,
+    existingSkillPaths,
+    existingSettingsPaths,
     warnings,
   };
 }
@@ -353,4 +360,10 @@ export function validateArtifacts(result: GenerateResult): string[] {
     }
   }
   return problems;
+}
+
+/** Return exact output paths already present in an approved staging scope. */
+export function findOutputCollisions(existingPaths: string[], files: GeneratedArtifact[]): string[] {
+  const existing = new Set(existingPaths.map(safeRelativePath).filter((value): value is string => value !== null));
+  return [...new Set(files.map(file => file.path).filter(filePath => existing.has(filePath)))];
 }
