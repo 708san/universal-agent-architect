@@ -14,6 +14,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [ ] Formal schema and versioned fixtures for Blueprint and capability registry.
   - [x] Initial Blueprint 0.1 schema and production-readiness gate document.
 - [ ] Parser for existing Codex configuration + conflicts + dry-run diffs.
+  - [x] Basic metadata inventory and no-write output collision preview.
 - [ ] Robust project analysis (AST via Tree-sitter WASM), bounded file budget and OS-specific safe file traversal.
 - [ ] Minimal decision engine with explainability and eval fixtures; no unnecessary agent inflation.
 - [ ] Verified Codex adapter covering rules/skills and supported subagent/MCP proposals.

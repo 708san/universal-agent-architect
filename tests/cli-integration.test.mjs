@@ -42,6 +42,10 @@ test('CLI skips hidden directories and limits traversal depth', async () => {
     await writeFile(path.join(project, '.hidden', 'secret.txt'), 'do not inventory');
     await mkdir(path.join(project, '.github', 'workflows'), { recursive: true });
     await writeFile(path.join(project, '.github', 'workflows', 'ci.yml'), 'name: CI\n');
+    await mkdir(path.join(project, '.agents', 'skills', 'review'), { recursive: true });
+    await writeFile(path.join(project, '.agents', 'skills', 'review', 'SKILL.md'), '---\nname: review\n---\n');
+    await mkdir(path.join(project, '.codex'), { recursive: true });
+    await writeFile(path.join(project, '.codex', 'config.toml'), 'approval_policy = "never"\n');
     let nested = project;
     for (let index = 0; index < 9; index++) {
       nested = path.join(nested, `level-${index}`);
@@ -52,8 +56,29 @@ test('CLI skips hidden directories and limits traversal depth', async () => {
     assert.equal(analyze.status, 0, analyze.stderr);
     const output = JSON.parse(analyze.stdout);
     assert.ok(output.facts.hasGitHubActions);
+    assert.deepEqual(output.facts.existingSkillPaths, ['.agents/skills/review/SKILL.md']);
+    assert.deepEqual(output.facts.existingSettingsPaths, ['.codex/config.toml']);
     assert.ok(!output.facts.warnings.some(warning => warning.includes('secret.txt')));
     assert.ok(output.facts.warnings.some(warning => warning.includes('depth limit')));
     assert.ok(!output.facts.warnings.some(warning => warning.includes('too-deep.ts')));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('CLI dry-run reports output collisions without writing', async () => {
+  const root = await mkdtemp(path.join(tmpdir(),'uaa-'));
+  const project = path.join(root, 'project');
+  try {
+    await mkdir(project, { recursive: true });
+    const generated = path.join(root, 'generated', 'project');
+    await mkdir(generated, { recursive: true });
+    await writeFile(path.join(generated, 'AGENTS.md'), 'existing instructions');
+    const run = spawnSync(process.execPath, [cli, 'generate', project, 'codex', 'baseline', '--dry-run'], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    const output = JSON.parse(run.stdout);
+    assert.equal(output.mode, 'dry-run');
+    assert.deepEqual(output.rendering.collisions, ['AGENTS.md']);
+    assert.ok(output.rendering.proposedFiles.includes('AGENTS.md'));
+    assert.equal(await readFile(path.join(generated, 'AGENTS.md'), 'utf8'), 'existing instructions');
+    assert.deepEqual((await readdir(generated)).sort(), ['AGENTS.md']);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
