@@ -1,0 +1,42 @@
+[
+  {
+    "id": "small-no-tests",
+    "input": { "paths": ["src/app.py"] },
+    "request": { "target": "codex", "workType": "coding" },
+    "expected": {
+      "agentIds": ["main"],
+      "skillIds": [],
+      "reasons": ["No tests detected"]
+    }
+  },
+  {
+    "id": "medium-tested-reviewed",
+    "input": {
+      "paths": ["package.json", "src/app.ts", "tests/app.test.ts", "README.md"],
+      "manifests": { "package.json": "{\"devDependencies\":{\"vitest\":\"1.0.0\"}}" }
+    },
+    "request": { "target": "codex", "workType": "coding", "needsReview": true },
+    "expected": {
+      "agentIds": ["main"],
+      "skillIds": ["code-review", "test-verification"],
+      "reasons": ["Review requested", "Reuse existing test infrastructure"]
+    }
+  },
+  {
+    "id": "large-independent-workstreams",
+    "input": {
+      "paths": [
+        "package.json", "src/api.ts", "src/ui.tsx", "src/db.ts", "src/auth.ts",
+        "tests/api.test.ts", "tests/ui.test.tsx", "tests/db.test.ts", "docs/design.md",
+        ".github/workflows/ci.yml", "AGENTS.md"
+      ],
+      "manifests": { "package.json": "{\"dependencies\":{\"react\":\"19.0.0\",\"express\":\"5.0.0\"},\"devDependencies\":{\"jest\":\"30.0.0\"}}" }
+    },
+    "request": { "target": "codex", "workType": "coding", "needsReview": true, "independentWorkstreams": 3, "securityProfile": "strict" },
+    "expected": {
+      "agentIds": ["main", "reviewer"],
+      "skillIds": ["code-review", "test-verification"],
+      "reasons": ["Review requested", "Reuse existing test infrastructure", "Multiple independent workstreams", "Existing instructions or skills detected"]
+    }
+  }
+]
