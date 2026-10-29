@@ -103,7 +103,7 @@ const SECURITY_CHECKS: SecurityCheck[] = [
 const CODEX_SOURCE_URLS = [
   'https://learn.chatgpt.com/docs/agent-configuration/agents-md',
   'https://learn.chatgpt.com/docs/agent-configuration/subagents',
-  'https://learn.chatgpt.com/docs/build-skills',
+  'https://agentskills.io/specification',
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -112,6 +112,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isSlug(value: unknown): value is string {
   return typeof value === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+
+function isSkillName(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= 64 && isSlug(value);
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -231,7 +235,7 @@ export function validateBlueprint(value: unknown): string[] {
   }
   if (Array.isArray(value.skills)) {
     value.skills.forEach((skill, index) => {
-      if (!isRecord(skill) || !isSlug(skill.id) || !isNonEmptyString(skill.purpose)) {
+      if (!isRecord(skill) || !isSkillName(skill.id) || !isNonEmptyString(skill.purpose)) {
         problems.push(`Invalid skill at index ${index}.`);
       } else {
         problems.push(...unknownKeys(skill, ['id', 'purpose'], `Skill at index ${index}`));
@@ -318,7 +322,7 @@ export function analyzeProject(input: ProjectInput): ProjectFacts {
     if (new RegExp(`(^|[^a-z])${name}([^a-z]|$)`, 'im').test(py)) frameworks.add(name);
   }
   const hasTests = unique.some(p => /(^|\/)(tests?|__tests__)(\/|$)/i.test(p) || /(^|\/)(pytest\.ini|vitest\.config\.[jt]s)$/i.test(p));
-  const existingInstructionPaths = unique.filter(p => /(^|\/)(AGENTS|CLAUDE|GEMINI)\.md$/i.test(p)).sort();
+  const existingInstructionPaths = unique.filter(p => /(^|\/)(?:AGENTS(?:\.override)?|CLAUDE|GEMINI)\.md$/i.test(p)).sort();
   const existingSkillPaths = unique.filter(p => /(^|\/)(?:\.agents\/skills|skills)\/[^/]+\/SKILL\.md$/i.test(p)).sort();
   const existingSettingsPaths = unique.filter(p => /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(p)).sort();
   return {
@@ -415,8 +419,20 @@ export function validateArtifacts(result: GenerateResult): string[] {
     if (seen.has(f.path)) problems.push(`Duplicate output path: ${f.path}`);
     seen.add(f.path);
     if (f.path.endsWith('/SKILL.md')) {
-      const match = /^---\nname: ([a-z0-9]+(?:-[a-z0-9]+)*)\ndescription: ([^\n]+)\n---\n/.exec(f.content);
-      if (!match || match[1] !== f.path.split('/').at(-2) || (match[2]?.length ?? 0) > 1024) problems.push(`Invalid skill: ${f.path}`);
+      const match = /^---\nname: ([^\n]+)\ndescription: ([^\n]+)\n---\n/.exec(f.content);
+      const skillName = match?.[1];
+      const description = match?.[2];
+      if (!isSkillName(skillName) || skillName !== f.path.split('/').at(-2)
+        || !description || description.length > 1024) problems.push(`Invalid skill: ${f.path}`);
+    }
+    if (/^\.codex\/agents\/[^/]+\.toml$/.test(f.path)) {
+      const name = /^name\s*=\s*"([^"]+)"\s*$/m.exec(f.content)?.[1];
+      const description = /^description\s*=\s*"([^"]*)"\s*$/m.exec(f.content)?.[1];
+      const instructions = /^developer_instructions\s*=\s*(?:"[^"]*"|"""[\s\S]*?""")\s*$/m.exec(f.content)?.[0];
+      const filename = f.path.split('/').at(-1)?.replace(/\.toml$/, '');
+      if (!name || !description || !instructions || name !== filename) {
+        problems.push(`Invalid Codex custom agent: ${f.path}`);
+      }
     }
     if (f.path === 'UAA-MANIFEST.json') {
       try {

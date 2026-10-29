@@ -22,6 +22,8 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [x] Minimal decision engine with explainability and eval fixtures; no unnecessary agent inflation.
   - [x] Initial small/medium/large planner evaluation fixtures.
 - [ ] Verified Codex adapter covering rules/skills and supported subagent/MCP proposals.
+  - [x] Official format fixtures and fail-closed validators for AGENTS.md, Agent Skills and custom-agent TOML.
+  - [ ] Runtime loading and MCP behavior remain unverified.
 - [ ] Browser ZIP import/export; safe directory selection fallback; static Pages deploy only after CSP/security tests.
 
 **Exit:** safe coding-project analysis; reproducible, verified Codex files; no AI required.

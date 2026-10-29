@@ -6,7 +6,14 @@ It is a reviewed snapshot, not an automatic claim of latest support. `verified` 
 must include an official source URL and a local fixture; `planned` and `unknown` entries must not be
 rendered as supported.
 
-Checked: 2026-10-29. **Supported in core** != **planned target**. Product and subscription differences must be recorded.
+Checked: 2026-10-30. **Supported in core** != **planned target**. Product and subscription differences must be recorded.
+
+## Current Codex evidence
+
+The prototype now validates the documented file shapes for `AGENTS.md`, Agent Skills and project-scoped
+custom agents under `.codex/agents/*.toml`. The fixture is [`codex-adapter-0.1.json`](../tests/fixtures/codex-adapter-0.1.json).
+This is format-level evidence only: the repository does not launch Codex to prove runtime discovery,
+permission inheritance or actual Skill execution. The target therefore remains **partial**.
 
 | Target | Local project instruction | Skill | Custom subagent | MCP | Renderer in prototype |
 |---|---|---|---|---|---|
@@ -21,8 +28,8 @@ The table is planning guidance, **not a promise of equivalence**. A feature is "
 ## Primary official sources
 - Codex instructions: https://learn.chatgpt.com/docs/agent-configuration/agents-md
 - Codex subagents: https://learn.chatgpt.com/docs/agent-configuration/subagents
-- Codex skills: https://learn.chatgpt.com/docs/build-skills
 - Agent Skills spec: https://agentskills.io/specification
+- Codex skills overview: https://learn.chatgpt.com/docs/build-skills
 - MCP TypeScript SDK (v1): https://ts.sdk.modelcontextprotocol.io/server
 - OpenAI Docs MCP (opt-in): https://developers.openai.com/learn/docs-mcp
 - ChatGPT plugins/MCP: https://developers.openai.com/plugins/quickstart

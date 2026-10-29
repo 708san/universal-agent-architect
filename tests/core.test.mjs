@@ -17,9 +17,9 @@ test('safe manifest detection is deterministic and excludes content from report'
 
 test('existing agent configuration is inventoried as paths only', () => {
   const report = analyzeProject({ paths: [
-    'AGENTS.md', 'nested/CLAUDE.md', '.agents/skills/review/SKILL.md', '.codex/config.toml', '.codex/agents/reviewer.toml',
+    'AGENTS.md', 'nested/AGENTS.override.md', 'nested/CLAUDE.md', '.agents/skills/review/SKILL.md', '.codex/config.toml', '.codex/agents/reviewer.toml',
   ] });
-  assert.deepEqual(report.existingInstructionPaths, ['AGENTS.md', 'nested/CLAUDE.md']);
+  assert.deepEqual(report.existingInstructionPaths, ['AGENTS.md', 'nested/AGENTS.override.md', 'nested/CLAUDE.md']);
   assert.deepEqual(report.existingSkillPaths, ['.agents/skills/review/SKILL.md']);
   assert.deepEqual(report.existingSettingsPaths, ['.codex/agents/reviewer.toml', '.codex/config.toml']);
   assert.equal(report.hasExistingAgentInstructions, true);
