@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { lstat, readdir, readFile, mkdir, writeFile, access, realpath } from 'node:fs/promises';
 import path from 'node:path';
-import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts, safeRelativePath, findOutputCollisions } from '../dist/core.js';
+import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts, safeRelativePath, findOutputCollisions, findOutputConflicts } from '../dist/core.js';
 
 const ignored = new Set(['node_modules', '.git', '.env', '.ssh', '.aws', '.npmrc', '.venv', 'venv', 'dist', 'coverage', 'build', '.next', 'secrets', 'private']);
 const allowedHiddenDirectories = new Set(['.github', '.codex', '.agents']);
@@ -93,6 +93,7 @@ async function main() {
         supported: rendered.supported,
         proposedFiles: rendered.files.map(file => file.path),
         collisions,
+        projectConflicts: findOutputConflicts(input.paths, rendered.files),
         problems: validateArtifacts(rendered),
       },
     }, null, 2));

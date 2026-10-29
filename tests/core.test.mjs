@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements, validateBlueprint, findOutputCollisions } from '../dist/core.js';
+import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements, validateBlueprint, findOutputCollisions, findOutputConflicts } from '../dist/core.js';
 
 test('sensitive paths and traversal are filtered', () => {
   for (const p of ['.env','.env.local','folder/.env.production','folder/../etc/passwd','/etc/passwd','C:/secret','dir/.ssh/key','dir/private/data','dir/tls.pem']) assert.equal(safeRelativePath(p), null);
@@ -81,6 +81,18 @@ test('invalid security requirements fail closed during artifact generation', () 
 test('output collision detection is safe and deterministic', () => {
   const files = [{ path: 'AGENTS.md', content: 'x' }, { path: '../escape', content: 'y' }];
   assert.deepEqual(findOutputCollisions(['AGENTS.md', '../escape', '.env'], files), ['AGENTS.md']);
+  assert.deepEqual(findOutputConflicts([
+    'AGENTS.md', '.agents/skills/review/SKILL.md', '.codex/config.toml', 'src/app.ts', '../escape', '.env',
+  ], files.concat([
+    { path: '.agents/skills/review/SKILL.md', content: 'x' },
+    { path: '.codex/config.toml', content: 'x' },
+    { path: 'src/app.ts', content: 'x' },
+  ])), [
+    { path: 'AGENTS.md', category: 'instruction' },
+    { path: '.agents/skills/review/SKILL.md', category: 'skill' },
+    { path: '.codex/config.toml', category: 'codex-setting' },
+    { path: 'src/app.ts', category: 'project-file' },
+  ]);
 });
 test('malformed Blueprints fail closed before rendering', () => {
   const facts = analyzeProject({ paths: [] });

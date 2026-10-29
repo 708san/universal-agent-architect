@@ -77,6 +77,8 @@ export interface Blueprint {
 }
 export interface GeneratedArtifact { path: string; content: string }
 export interface GenerateResult { supported: boolean; reason?: string; files: GeneratedArtifact[] }
+export type OutputConflictCategory = 'instruction' | 'skill' | 'codex-setting' | 'project-file';
+export interface OutputConflict { path: string; category: OutputConflictCategory }
 
 const forbiddenParts = new Set([
   '.git', '.env', '.ssh', '.aws', '.npmrc', 'node_modules', 'vendor', 'dist', 'build',
@@ -479,4 +481,19 @@ export function validateArtifacts(result: GenerateResult): string[] {
 export function findOutputCollisions(existingPaths: string[], files: GeneratedArtifact[]): string[] {
   const existing = new Set(existingPaths.map(safeRelativePath).filter((value): value is string => value !== null));
   return [...new Set(files.map(file => file.path).filter(filePath => existing.has(filePath)))];
+}
+
+/** Explain source-project paths that would be replaced if staged artifacts were applied. */
+export function findOutputConflicts(existingPaths: string[], files: GeneratedArtifact[]): OutputConflict[] {
+  const existing = new Set(existingPaths.map(safeRelativePath).filter((value): value is string => value !== null));
+  return [...new Set(files.map(file => file.path).filter(filePath => existing.has(filePath)))].map(path => {
+    const category: OutputConflictCategory = /(^|\/)(?:AGENTS(?:\.override)?|CLAUDE|GEMINI)\.md$/i.test(path)
+      ? 'instruction'
+      : /^(?:\.agents\/skills|skills)\/[^/]+\/SKILL\.md$/i.test(path)
+        ? 'skill'
+        : /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(path)
+          ? 'codex-setting'
+          : 'project-file';
+    return { path, category };
+  });
 }

@@ -69,6 +69,7 @@ test('CLI dry-run reports output collisions without writing', async () => {
   const project = path.join(root, 'project');
   try {
     await mkdir(project, { recursive: true });
+    await writeFile(path.join(project, 'AGENTS.md'), 'existing project instructions');
     const generated = path.join(root, 'generated', 'project');
     await mkdir(generated, { recursive: true });
     await writeFile(path.join(generated, 'AGENTS.md'), 'existing instructions');
@@ -77,6 +78,7 @@ test('CLI dry-run reports output collisions without writing', async () => {
     const output = JSON.parse(run.stdout);
     assert.equal(output.mode, 'dry-run');
     assert.deepEqual(output.rendering.collisions, ['AGENTS.md']);
+    assert.deepEqual(output.rendering.projectConflicts, [{ path: 'AGENTS.md', category: 'instruction' }]);
     assert.ok(output.rendering.proposedFiles.includes('AGENTS.md'));
     assert.equal(await readFile(path.join(generated, 'AGENTS.md'), 'utf8'), 'existing instructions');
     assert.deepEqual((await readdir(generated)).sort(), ['AGENTS.md']);
