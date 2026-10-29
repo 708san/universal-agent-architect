@@ -1,0 +1,6 @@
+# Project-scoped Codex settings. Avoid machine-specific model names or secret values.
+# Codex only uses project config where the project is trusted.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 3
+# No network MCP configured by default: offline-first policy.

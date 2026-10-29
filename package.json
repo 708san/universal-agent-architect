@@ -1,0 +1,16 @@
+{
+  "name": "universal-agent-architect",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline-first agent architecture planner — early prototype",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "check": "npm run test && node scripts/check-skills.mjs",
+    "plan": "node scripts/cli.mjs",
+    "serve": "node scripts/serve.mjs"
+  },
+  "devDependencies": { "typescript": "5.8.3" },
+  "engines": { "node": ">=22" }
+}

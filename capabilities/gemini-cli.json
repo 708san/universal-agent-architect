@@ -1,0 +1,8 @@
+{
+  "target": "gemini-cli",
+  "checked_at": "2026-10-29",
+  "registry_version": "0.1",
+  "renderer_status": "not_implemented",
+  "verification_status": "prototype_only",
+  "notes": "Do not treat existence of a target file as evidence of validated feature support. See docs/COMPATIBILITY.md."
+}
