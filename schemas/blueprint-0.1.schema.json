@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/708san/universal-agent-architect/schema/blueprint-0.1.json",
+  "title": "Universal Agent Architect Blueprint 0.1",
+  "description": "Canonical, deterministic architecture proposal. This schema validates structure only; it does not grant runtime permissions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "target",
+    "workType",
+    "agents",
+    "skills",
+    "reasons",
+    "warnings",
+    "security"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "0.1"
+    },
+    "target": {
+      "enum": ["codex", "claude-code", "gemini-cli", "antigravity", "chatgpt"]
+    },
+    "workType": {
+      "const": "coding"
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/agent"
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/skill"
+      }
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "security": {
+      "$ref": "#/$defs/securityRequirements"
+    }
+  },
+  "$defs": {
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "role": { "type": "string", "minLength": 1 }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "purpose"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "purpose": { "type": "string", "minLength": 1 }
+      }
+    },
+    "securityRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "network",
+        "fileWrites",
+        "runGeneratedScripts",
+        "readSecrets",
+        "followSymlinks",
+        "rawSourceDisclosure",
+        "requiredApprovals",
+        "securityTests"
+      ],
+      "properties": {
+        "profile": { "enum": ["baseline", "strict"] },
+        "network": { "const": "deny" },
+        "fileWrites": { "const": "approval" },
+        "runGeneratedScripts": { "const": false },
+        "readSecrets": { "const": false },
+        "followSymlinks": { "const": false },
+        "rawSourceDisclosure": { "const": "deny" },
+        "requiredApprovals": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 4,
+          "items": {
+            "enum": ["filesystem.write", "process.exec", "network", "mcp"]
+          }
+        },
+        "securityTests": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "path-traversal",
+              "symlink-escape",
+              "secret-nondisclosure",
+              "malformed-input",
+              "unsupported-target",
+              "output-collision",
+              "no-network",
+              "prompt-injection",
+              "tool-misuse",
+              "mcp-redaction",
+              "resource-limits"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
