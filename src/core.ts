@@ -93,6 +93,7 @@ const STRICT_SECURITY_TESTS: SecurityCheck[] = [
   ...BASELINE_SECURITY_TESTS, 'prompt-injection', 'tool-misuse', 'mcp-redaction', 'resource-limits',
 ];
 const TARGETS: Target[] = ['codex', 'claude-code', 'gemini-cli', 'antigravity', 'chatgpt'];
+const VERIFICATION_STATUSES: VerificationStatus[] = ['verified', 'partial', 'planned', 'unknown', 'unsupported', 'experimental'];
 const APPROVALS: ApprovalRequirement[] = ['filesystem.write', 'process.exec', 'network', 'mcp'];
 const SECURITY_CHECKS: SecurityCheck[] = [
   'path-traversal', 'symlink-escape', 'secret-nondisclosure', 'malformed-input',
@@ -408,6 +409,7 @@ export function validateArtifacts(result: GenerateResult): string[] {
   if (!result.supported) return [result.reason ?? 'Unsupported target'];
   const problems: string[] = [];
   const seen = new Set<string>();
+  let manifest: Record<string, unknown> | undefined;
   for (const f of result.files) {
     if (safeRelativePath(f.path) === null) problems.push(`Unsafe output path: ${f.path}`);
     if (seen.has(f.path)) problems.push(`Duplicate output path: ${f.path}`);
@@ -418,16 +420,41 @@ export function validateArtifacts(result: GenerateResult): string[] {
     }
     if (f.path === 'UAA-MANIFEST.json') {
       try {
-        const manifest = JSON.parse(f.content) as Record<string, unknown>;
-        if (manifest.manifestVersion !== '0.1' || typeof manifest.target !== 'string'
-          || typeof manifest.targetEdition !== 'string' || typeof manifest.targetVersion !== 'string'
-          || typeof manifest.capabilityRegistryVersion !== 'string'
-          || typeof manifest.verificationStatus !== 'string' || !Array.isArray(manifest.sourceUrls)
-          || !Array.isArray(manifest.files) || !manifest.files.includes('UAA-MANIFEST.json')) {
-          problems.push('Invalid generation manifest.');
-        }
+        manifest = JSON.parse(f.content) as Record<string, unknown>;
       } catch { problems.push('Invalid generation manifest JSON.'); }
     }
+  }
+  if (!manifest) {
+    problems.push('Invalid generation manifest: missing manifest.');
+    return problems;
+  }
+  const validSourceUrls = Array.isArray(manifest.sourceUrls)
+    && new Set(manifest.sourceUrls).size === manifest.sourceUrls.length
+    && manifest.sourceUrls.every(value => {
+      if (typeof value !== 'string') return false;
+      try {
+        const url = new URL(value);
+        return url.protocol === 'https:' && url.hostname.length > 0 && !url.username && !url.password;
+      } catch { return false; }
+    });
+  const manifestFiles = manifest.files;
+  const artifactPaths = result.files.map(file => file.path);
+  const validManifestFiles = Array.isArray(manifestFiles)
+    && manifestFiles.length > 0
+    && new Set(manifestFiles).size === manifestFiles.length
+    && manifestFiles.every(filePath => typeof filePath === 'string' && safeRelativePath(filePath) !== null)
+    && new Set(manifestFiles).size === new Set(artifactPaths).size
+    && artifactPaths.every(filePath => manifestFiles.includes(filePath));
+  if (manifest.manifestVersion !== '0.1'
+    || !TARGETS.includes(manifest.target as Target)
+    || typeof manifest.targetEdition !== 'string' || manifest.targetEdition.length === 0
+    || typeof manifest.targetVersion !== 'string' || manifest.targetVersion.length === 0
+    || typeof manifest.capabilityRegistryVersion !== 'string' || manifest.capabilityRegistryVersion.length === 0
+    || !VERIFICATION_STATUSES.includes(manifest.verificationStatus as VerificationStatus)
+    || !validSourceUrls
+    || (manifest.securityProfile !== 'baseline' && manifest.securityProfile !== 'strict')
+    || !validManifestFiles) {
+    problems.push('Invalid generation manifest.');
   }
   return problems;
 }
