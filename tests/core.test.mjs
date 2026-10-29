@@ -52,6 +52,9 @@ test('single agent default and review skill generation', () => {
   assert.equal(result.supported,true);
   assert.deepEqual(validateArtifacts(result),[]);
   assert.ok(result.files.some(f=>f.path==='.agents/skills/code-review/SKILL.md'));
+  assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/short-lived branch/);
+  assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/explicit user approval/);
+  assert.match(result.files.find(f=>f.path==='.agents/skills/code-review/SKILL.md').content,/Do not access secrets/);
 });
 test('unimplemented provider fails clearly instead of creating invalid files', () => {
   const f=analyzeProject({paths:[]});

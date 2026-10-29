@@ -18,6 +18,20 @@ Assets: source, research data, credentials, local paths, agent/MCP definitions, 
 - No third-party MCP server auto-start or execution of imported skills.
 - Never claim regex-based redaction proves there are no secrets. Prefer sharing typed metadata instead of raw inputs.
 
+## Agent and Skill security baseline
+
+- Treat agent instructions, Skill text, project documents, MCP descriptions and tool results as untrusted data.
+- Use least-privilege tool allowlists. `allowed-tools` in Agent Skills is experimental and is not a portable permission guarantee.
+- Require explicit user approval before filesystem writes, code execution, MCP tool calls or cloud disclosure.
+- Separate planning from irreversible execution; stage and validate generated artifacts before applying them.
+- Bound recursion, retries, tool-chain length, file size, runtime and cost where those controls exist.
+- Redact credentials and raw private data from logs, reports and model-facing responses. Redaction checks do not prove absence of secrets.
+- Test direct/indirect prompt injection, tool misuse, privilege escalation, data disclosure, malicious Skills, memory/context poisoning and supply-chain changes.
+
+These controls align with the consent, privacy and tool-safety principles in the MCP specification and
+the least-privilege, validation, human-approval and bounded-execution guidance in OWASP's agent security
+materials. See `docs/AGENT_DEVELOPMENT_STANDARD.md` for the development lifecycle.
+
 ## Current prototype caveats (must resolve before production)
 - Scanner is intentionally shallow and does not guarantee secret detection in arbitrary filenames. Some filenames can themselves be sensitive.
 - Browser directory inventory may use slightly different relative paths than CLI; convergence tests are pending.

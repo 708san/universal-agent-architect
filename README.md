@@ -35,6 +35,8 @@ npm run serve
 - [構成とモジュール設計](docs/ARCHITECTURE.md)
 - [ロードマップ](docs/ROADMAP.md)
 - [セキュリティ設計](docs/SECURITY.md)
+- [開発ワークフロー](docs/DEVELOPMENT_WORKFLOW.md)
+- [エージェント開発標準](docs/AGENT_DEVELOPMENT_STANDARD.md)
 - [対応サービスと公式情報](docs/COMPATIBILITY.md)
 - [Codexに渡す開発開始プロンプト](docs/CODEX_START_PROMPT.md)
 - [開発タスク](docs/BACKLOG.md)

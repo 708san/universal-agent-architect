@@ -21,6 +21,14 @@ Universal Agent Architect is an offline-first, rule-based tool that designs **ot
 - A target adapter must never pretend unsupported features exist. Add target-specific fixtures and cite official specification/version before declaring support.
 - Prefer smaller, documented abstractions over a framework. No premature model orchestration, arbitrary plugin execution or remote services in phase 1.
 
+## Git and development workflow
+- Follow `docs/DEVELOPMENT_WORKFLOW.md` for branches, commits, pull requests and releases.
+- Use a short-lived branch and Conventional Commit message for each coherent change.
+- Inspect `git status` and the complete diff before edits and before any commit.
+- Do not commit, push, merge, rebase, force-push, reset or delete history without explicit user approval for that action.
+- Keep secrets, raw private data, dependency caches and generated build output out of commits.
+- Follow `docs/AGENT_DEVELOPMENT_STANDARD.md` for generated agents and Skills; unsupported capabilities remain unsupported.
+
 ## Development commands
 - `npm install` (initial setup, requires network approval)
 - `npm run check` (TypeScript build, node:test tests, skill format checks)
