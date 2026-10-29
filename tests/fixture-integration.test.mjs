@@ -25,3 +25,13 @@ test('CLI facts match the golden fixture', () => {
   assert.equal(run.status, 0, run.stderr);
   assert.deepEqual(JSON.parse(run.stdout).facts, fixture.expectedFacts);
 });
+
+test('CLI exposes the strict security profile', () => {
+  const cli = path.join(root, 'scripts/cli.mjs');
+  const sample = path.join(root, 'examples/sample-python');
+  const run = spawnSync(process.execPath, [cli, 'analyze', sample, 'codex', 'strict'], { cwd: root, encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  const output = JSON.parse(run.stdout);
+  assert.equal(output.blueprint.security.profile, 'strict');
+  assert.ok(output.blueprint.security.securityTests.includes('mcp-redaction'));
+});

@@ -16,6 +16,12 @@ node scripts/cli.mjs generate ./examples/sample-python codex
 npm run serve
 ```
 
+CLIの4番目の引数で`baseline`（標準）または`strict`（強化）のセキュリティプロファイルを選べます。
+
+```bash
+node scripts/cli.mjs analyze ./examples/sample-python codex strict
+```
+
 ブラウザ試作版：`http://127.0.0.1:4173/`。`npm run serve`はローカルHTTPの表示用であり、MCPサーバではありません。
 
 `generate` は既存プロジェクトを書き換えず、`generated/<folder>/` に新しい設定ファイルを出力します。同一出力先が存在すると失敗します。`generated/` 内のファイルを確認してから、ご自身で適用してください。

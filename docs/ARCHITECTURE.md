@@ -39,6 +39,10 @@ capability-registry <--- official docs updater + human-reviewed fixtures
 - `validateArtifacts(GenerateResult): string[]`
 - `safeRelativePath(string): string | null`
 
+`DesignRequest.securityProfile` selects the deterministic `baseline` or `strict` security
+requirements recorded in `Blueprint.security`. The profile is a declarative requirement and test
+plan; target adapters must enforce it and report unsupported enforcement visibly.
+
 A future `scanProject()` belongs outside core because it accesses the filesystem. Untrusted project files must be treated as data, never instructions to Codex or a model. No runtime invocation of imported MCP servers during inventory.
 
 ## Adapter contract (planned)

@@ -1,6 +1,31 @@
 /** Universal Agent Architect: pure, offline-first, dependency-free core (prototype). */
 export type Target = 'codex' | 'claude-code' | 'gemini-cli' | 'antigravity' | 'chatgpt';
 export type WorkType = 'coding';
+export type SecurityProfile = 'baseline' | 'strict';
+export type SecurityCheck =
+  | 'path-traversal'
+  | 'symlink-escape'
+  | 'secret-nondisclosure'
+  | 'malformed-input'
+  | 'unsupported-target'
+  | 'output-collision'
+  | 'no-network'
+  | 'prompt-injection'
+  | 'tool-misuse'
+  | 'mcp-redaction'
+  | 'resource-limits';
+export type ApprovalRequirement = 'filesystem.write' | 'process.exec' | 'network' | 'mcp';
+export interface SecurityRequirements {
+  profile: SecurityProfile;
+  network: 'deny';
+  fileWrites: 'approval';
+  runGeneratedScripts: false;
+  readSecrets: false;
+  followSymlinks: false;
+  rawSourceDisclosure: 'deny';
+  requiredApprovals: ApprovalRequirement[];
+  securityTests: SecurityCheck[];
+}
 export interface ProjectFacts {
   filesSeen: number;
   languages: string[];
@@ -22,6 +47,7 @@ export interface DesignRequest {
   workType: WorkType;
   needsReview?: boolean;
   independentWorkstreams?: number;
+  securityProfile?: SecurityProfile;
 }
 export interface Blueprint {
   schemaVersion: '0.1';
@@ -31,7 +57,7 @@ export interface Blueprint {
   skills: { id: string; purpose: string }[];
   reasons: string[];
   warnings: string[];
-  security: { network: 'deny'; fileWrites: 'approval'; runGeneratedScripts: false };
+  security: SecurityRequirements;
 }
 export interface GeneratedArtifact { path: string; content: string }
 export interface GenerateResult { supported: boolean; reason?: string; files: GeneratedArtifact[] }
@@ -43,6 +69,46 @@ const forbiddenParts = new Set([
 const allowedManifests = new Set(['package.json', 'pyproject.toml', 'requirements.txt']);
 const MAX_MANIFEST_BYTES = 100_000;
 const MAX_INPUT_PATHS = 5_000;
+const BASELINE_SECURITY_TESTS: SecurityCheck[] = [
+  'path-traversal', 'symlink-escape', 'secret-nondisclosure', 'malformed-input',
+  'unsupported-target', 'output-collision', 'no-network',
+];
+const STRICT_SECURITY_TESTS: SecurityCheck[] = [
+  ...BASELINE_SECURITY_TESTS, 'prompt-injection', 'tool-misuse', 'mcp-redaction', 'resource-limits',
+];
+
+function createSecurityRequirements(profile: SecurityProfile): SecurityRequirements {
+  return {
+    profile,
+    network: 'deny',
+    fileWrites: 'approval',
+    runGeneratedScripts: false,
+    readSecrets: false,
+    followSymlinks: false,
+    rawSourceDisclosure: 'deny',
+    requiredApprovals: ['filesystem.write', 'process.exec', 'network', 'mcp'],
+    securityTests: [...(profile === 'strict' ? STRICT_SECURITY_TESTS : BASELINE_SECURITY_TESTS)],
+  };
+}
+
+export function validateSecurityRequirements(security: SecurityRequirements): string[] {
+  const problems: string[] = [];
+  if (security.network !== 'deny') problems.push('Network policy must be deny.');
+  if (security.fileWrites !== 'approval') problems.push('File writes must require approval.');
+  if (security.runGeneratedScripts !== false) problems.push('Generated scripts must not run automatically.');
+  if (security.readSecrets !== false) problems.push('Secret reads must be disabled.');
+  if (security.followSymlinks !== false) problems.push('Symlink following must be disabled.');
+  if (security.rawSourceDisclosure !== 'deny') problems.push('Raw source disclosure must be denied.');
+  for (const approval of ['filesystem.write', 'process.exec', 'network', 'mcp'] as const) {
+    if (!security.requiredApprovals.includes(approval)) problems.push(`Missing approval requirement: ${approval}`);
+  }
+  if (new Set(security.securityTests).size !== security.securityTests.length) problems.push('Security tests must be unique.');
+  if (security.profile === 'strict' && !STRICT_SECURITY_TESTS.every(check => security.securityTests.includes(check))) {
+    problems.push('Strict profile must include all baseline and strict security tests.');
+  }
+  if (security.securityTests.length === 0) problems.push('At least one security test is required.');
+  return problems;
+}
 
 /** Normalize File.webkitRelativePath values without retaining unsafe paths. */
 export function normalizeBrowserRelativePaths(rawPaths: string[]): Array<string | null> {
@@ -152,8 +218,13 @@ export function proposeBlueprint(facts: ProjectFacts, req: DesignRequest): Bluep
   const warnings = [...facts.warnings];
   if (facts.hasExistingAgentInstructions || facts.hasExistingSkills) warnings.push('Existing instructions or skills detected: compare before applying.');
   if (req.target !== 'codex') warnings.push(`Rendering for ${req.target} is planned, not implemented in the prototype.`);
+  const requestedProfile = req.securityProfile as string | undefined;
+  const securityProfile: SecurityProfile = requestedProfile === 'strict' ? 'strict' : 'baseline';
+  if (requestedProfile && requestedProfile !== 'baseline' && requestedProfile !== 'strict') {
+    warnings.push('Unknown security profile; defaulted to baseline.');
+  }
   return { schemaVersion: '0.1', target: req.target, workType: req.workType, agents, skills,
-    reasons, warnings, security: { network: 'deny', fileWrites: 'approval', runGeneratedScripts: false } };
+    reasons, warnings, security: createSecurityRequirements(securityProfile) };
 }
 
 function skillMarkdown(id: string, purpose: string): string {
@@ -167,10 +238,13 @@ function skillMarkdown(id: string, purpose: string): string {
 /** Render only verified Codex files; other targets must not silently receive fake output. */
 export function generateArtifacts(blueprint: Blueprint): GenerateResult {
   if (blueprint.target !== 'codex') return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
+  const securityProblems = validateSecurityRequirements(blueprint.security);
+  if (securityProblems.length) return { supported: false, reason: securityProblems.join('; '), files: [] };
   const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: skillMarkdown(s.id, s.purpose) }));
   const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
+  const security = blueprint.security;
   return { supported: true, files: [
-    { path: 'AGENTS.md', content: '# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Before edits, inspect existing instructions and present a diff.\n- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n' },
+    { path: 'AGENTS.md', content: `# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Security profile: ${security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.\n- Required security checks: ${security.securityTests.join(', ')}.\n- Before edits, inspect existing instructions and present a diff.\n- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n` },
     ...skills, ...agents,
   ] };
 }

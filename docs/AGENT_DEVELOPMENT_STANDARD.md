@@ -32,6 +32,20 @@ Every generated agent should make these fields explicit in the canonical Bluepri
 The default is one main agent. Add reviewers or subagents only for independent work, review,
 authority separation or a demonstrated operational need.
 
+## Security profiles
+
+The core supports two declarative profiles:
+
+- `baseline`: deny network and raw-source disclosure, disable secret reads and generated scripts,
+  reject symlink following, require approval for writes/execution/network/MCP, and run the baseline
+  security-check set.
+- `strict`: all `baseline` requirements plus prompt-injection, tool-misuse, MCP-redaction and
+  resource-limit checks.
+
+These profiles produce requirements and test IDs. They are not a sandbox or a guarantee that a target
+runtime enforces permissions. A target adapter must validate what it can enforce and mark the rest
+unsupported.
+
 ## Skill contract
 
 Follow the [Agent Skills specification](https://agentskills.io/specification):

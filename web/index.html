@@ -5,6 +5,7 @@
 <body><main><h1>Universal Agent Architect</h1><p>初期プロトタイプ：ファイルはブラウザ内で解析します。AIや外部APIを呼び出しません。</p>
 <label for="files">解析対象のプロジェクト（フォルダ選択対応ブラウザ）</label><input id="files" type="file" webkitdirectory multiple>
 <label for="target">出力先</label><select id="target"><option>codex</option><option>claude-code</option><option>gemini-cli</option><option>antigravity</option><option>chatgpt</option></select>
+<label for="security">セキュリティプロファイル</label><select id="security"><option value="baseline">baseline（標準）</option><option value="strict">strict（強化）</option></select>
 <label><input id="review" type="checkbox" checked> コードレビューを追加</label><button id="run">構成を解析・提案</button>
 <p class="note">未実装の出力先は「未対応」と表示します。表示結果にファイル名そのものは含めません。</p><pre id="output" aria-live="polite">フォルダを選択してください。</pre>
 </main><script type="module">
@@ -20,7 +21,7 @@ $('run').addEventListener('click', async()=>{
     if(['package.json','pyproject.toml','requirements.txt'].includes(base)&&f.size<=100000)manifests[base]=await f.text();
   }
   const facts=analyzeProject({paths,manifests});
-  const blueprint=proposeBlueprint(facts,{target:$('target').value,workType:'coding',needsReview:$('review').checked});
+  const blueprint=proposeBlueprint(facts,{target:$('target').value,workType:'coding',needsReview:$('review').checked,securityProfile:$('security').value});
   const rendered=generateArtifacts(blueprint);
   $('output').textContent=JSON.stringify({facts,blueprint,rendering:{supported:rendered.supported,generatedFiles:rendered.files.map(f=>f.path),problems:validateArtifacts(rendered)}},null,2);
 });

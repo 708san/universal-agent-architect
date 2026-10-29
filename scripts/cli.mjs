@@ -32,16 +32,17 @@ async function scan(dir) {
   await walk(); return { paths, manifests };
 }
 async function main() {
-  const [command = 'help', folder = '.', target = 'codex'] = process.argv.slice(2);
+  const [command = 'help', folder = '.', target = 'codex', securityProfile = 'baseline'] = process.argv.slice(2);
   if (command !== 'analyze' && command !== 'generate') {
-    console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target]');
+    console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict]');
     return;
   }
+  if (securityProfile !== 'baseline' && securityProfile !== 'strict') throw new Error('Security profile must be baseline or strict');
   const abs = path.resolve(folder);
   if (!(await lstat(abs)).isDirectory()) throw new Error('Expected a directory');
   const input = await scan(abs);
   const facts = analyzeProject(input);
-  const blueprint = proposeBlueprint(facts, { target, workType: 'coding', needsReview: true });
+  const blueprint = proposeBlueprint(facts, { target, workType: 'coding', needsReview: true, securityProfile });
   if (command === 'analyze') { console.log(JSON.stringify({ facts, blueprint }, null, 2)); return; }
   const rendered = generateArtifacts(blueprint);
   const issues = validateArtifacts(rendered);

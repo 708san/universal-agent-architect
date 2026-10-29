@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts } from '../dist/core.js';
+import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements } from '../dist/core.js';
 
 test('sensitive paths and traversal are filtered', () => {
   for (const p of ['.env','.env.local','folder/.env.production','folder/../etc/passwd','/etc/passwd','C:/secret','dir/.ssh/key','dir/private/data','dir/tls.pem']) assert.equal(safeRelativePath(p), null);
@@ -44,6 +44,29 @@ test('path inventory is bounded without retaining extra input data', () => {
   assert.equal(report.filesSeen, 5_000);
   assert.ok(report.warnings.some(w => w.includes('path limit')));
 });
+
+test('security profiles produce deterministic requirements and checks', () => {
+  const facts = analyzeProject({ paths: [] });
+  const baseline = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });
+  const strict = proposeBlueprint(facts, { target: 'codex', workType: 'coding', securityProfile: 'strict' });
+  assert.equal(baseline.security.profile, 'baseline');
+  assert.equal(strict.security.profile, 'strict');
+  assert.deepEqual(validateSecurityRequirements(baseline.security), []);
+  assert.deepEqual(validateSecurityRequirements(strict.security), []);
+  assert.ok(strict.security.securityTests.includes('prompt-injection'));
+  assert.ok(strict.security.securityTests.includes('resource-limits'));
+  assert.ok(strict.security.securityTests.length > baseline.security.securityTests.length);
+});
+
+test('invalid security requirements fail closed during artifact generation', () => {
+  const facts = analyzeProject({ paths: [] });
+  const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });
+  const invalid = { ...blueprint, security: { ...blueprint.security, network: 'allow' } };
+  assert.ok(validateSecurityRequirements(invalid.security).length > 0);
+  const result = generateArtifacts(invalid);
+  assert.equal(result.supported, false);
+  assert.match(result.reason, /Network policy/);
+});
 test('single agent default and review skill generation', () => {
   const facts=analyzeProject({paths:['src/app.ts','tests/app.test.ts']});
   const p=proposeBlueprint(facts,{target:'codex',workType:'coding',needsReview:true});
@@ -54,6 +77,7 @@ test('single agent default and review skill generation', () => {
   assert.ok(result.files.some(f=>f.path==='.agents/skills/code-review/SKILL.md'));
   assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/short-lived branch/);
   assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/explicit user approval/);
+  assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/Required security checks/);
   assert.match(result.files.find(f=>f.path==='.agents/skills/code-review/SKILL.md').content,/Do not access secrets/);
 });
 test('unimplemented provider fails clearly instead of creating invalid files', () => {
