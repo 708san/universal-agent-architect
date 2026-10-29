@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { analyzeProject, proposeBlueprint } from '../dist/core.js';
+import { analyzeProject, proposeBlueprint, validateBlueprint } from '../dist/core.js';
 
 const schemaPath = path.resolve('schemas/blueprint-0.1.schema.json');
 
@@ -28,4 +28,5 @@ test('Blueprint 0.1 schema covers the emitted deterministic shape', () => {
   assert.equal(blueprint.security.runGeneratedScripts, false);
   assert.ok(blueprint.security.securityTests.every(check =>
     schema.$defs.securityRequirements.properties.securityTests.items.enum.includes(check)));
+  assert.deepEqual(validateBlueprint(blueprint), []);
 });
