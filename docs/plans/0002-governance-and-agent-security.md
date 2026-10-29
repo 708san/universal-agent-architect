@@ -1,6 +1,6 @@
 # Plan 0002 — Git governance and agent security baseline
 
-Status: in progress. Updated: 2026-10-29.
+Status: repository baseline documented; GitHub branch protection, vulnerability reporting and contact settings remain external Web actions. Updated: 2026-10-30.
 
 ## Objective
 

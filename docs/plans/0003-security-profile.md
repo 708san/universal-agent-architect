@@ -1,6 +1,6 @@
 # Plan 0003 — Versioned security profile baseline
 
-Status: declarative baseline implemented; runtime enforcement remains planned. Updated: 2026-10-29.
+Status: declarative baseline implemented; runtime enforcement remains planned. Updated: 2026-10-30.
 
 ## Objective
 

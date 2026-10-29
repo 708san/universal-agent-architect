@@ -1,6 +1,6 @@
 # Plan 0008 — Harden inventory scanner
 
-Status: in progress
+Status: complete
 
 ## Objective
 

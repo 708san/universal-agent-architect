@@ -1,6 +1,6 @@
 # Plan 0006 — Capability registry snapshot
 
-Status: in progress
+Status: complete
 
 ## Objective
 
