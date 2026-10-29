@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { analyzeProject, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts } from '../dist/core.js';
+import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts } from '../dist/core.js';
 
 test('sensitive paths and traversal are filtered', () => {
   for (const p of ['.env','.env.local','folder/.env.production','folder/../etc/passwd','/etc/passwd','C:/secret','dir/.ssh/key','dir/private/data','dir/tls.pem']) assert.equal(safeRelativePath(p), null);
@@ -13,6 +13,36 @@ test('safe manifest detection is deterministic and excludes content from report'
   assert.ok(report.frameworks.includes('fastapi'));
   assert.equal(report.hasTests,true);
   assert.ok(!JSON.stringify(report).includes('should-not-leak'));
+});
+
+test('browser-selected paths normalize like CLI-relative paths', () => {
+  assert.deepEqual(
+    normalizeBrowserRelativePaths([
+      'sample-project/src/app.py',
+      'sample-project/tests/test_app.py',
+      'sample-project/package.json',
+    ]),
+    ['src/app.py', 'tests/test_app.py', 'package.json'],
+  );
+  assert.deepEqual(normalizeBrowserRelativePaths(['src/app.py', 'tests/test_app.py']), ['src/app.py', 'tests/test_app.py']);
+  assert.deepEqual(normalizeBrowserRelativePaths(['sample-project/.env', 'sample-project/src/app.py']), [null, 'src/app.py']);
+});
+
+test('oversized and malformed manifests produce explicit safe warnings', () => {
+  const oversized = 'x'.repeat(100_001);
+  const report = analyzeProject({
+    paths: ['package.json', 'requirements.txt'],
+    manifests: { 'package.json': '{not-json}', 'requirements.txt': oversized },
+  });
+  assert.ok(report.warnings.some(w => w.includes('Invalid package.json')));
+  assert.ok(report.warnings.some(w => w.includes('requirements.txt') && w.includes('size limit')));
+  assert.ok(!JSON.stringify(report).includes('{not-json}'));
+});
+
+test('path inventory is bounded without retaining extra input data', () => {
+  const report = analyzeProject({ paths: Array.from({ length: 5_001 }, (_, i) => `src/file-${i}.ts`) });
+  assert.equal(report.filesSeen, 5_000);
+  assert.ok(report.warnings.some(w => w.includes('path limit')));
 });
 test('single agent default and review skill generation', () => {
   const facts=analyzeProject({paths:['src/app.ts','tests/app.test.ts']});

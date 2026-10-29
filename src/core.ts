@@ -42,6 +42,20 @@ const forbiddenParts = new Set([
 ]);
 const allowedManifests = new Set(['package.json', 'pyproject.toml', 'requirements.txt']);
 const MAX_MANIFEST_BYTES = 100_000;
+const MAX_INPUT_PATHS = 5_000;
+
+/** Normalize File.webkitRelativePath values without retaining unsafe paths. */
+export function normalizeBrowserRelativePaths(rawPaths: string[]): Array<string | null> {
+  const segments = rawPaths.map(raw => raw.split('/'));
+  const first = segments[0]?.[0];
+  const hasCommonRoot = typeof first === 'string'
+    && segments.every(parts => parts.length > 1 && parts[0] === first);
+  return rawPaths.map((raw, index) => {
+    const parts = segments[index] ?? [];
+    const candidate = hasCommonRoot ? parts.slice(1).join('/') : raw;
+    return safeRelativePath(candidate);
+  });
+}
 
 /** Refuse absolute / traversal / sensitive paths before counting or reading. */
 export function safeRelativePath(raw: string): string | null {
@@ -54,16 +68,24 @@ export function safeRelativePath(raw: string): string | null {
   return path;
 }
 
-function getManifest(input: ProjectInput, name: string): string {
+function getManifest(input: ProjectInput, name: string): { value: string; warning?: string } {
   const value = input.manifests?.[name];
-  if (!allowedManifests.has(name) || typeof value !== 'string') return '';
-  if (new TextEncoder().encode(value).length > MAX_MANIFEST_BYTES) return '';
-  return value;
+  if (!allowedManifests.has(name) || typeof value !== 'string') return { value: '' };
+  if (new TextEncoder().encode(value).length > MAX_MANIFEST_BYTES) {
+    return { value: '', warning: `Ignored ${name}: manifest exceeds the size limit.` };
+  }
+  return { value };
 }
 
 /** Build a minimal facts object without preserving source file contents. */
 export function analyzeProject(input: ProjectInput): ProjectFacts {
-  const paths = input.paths.filter(p => safeRelativePath(p) !== null).map(p => p.replace(/^\.\//, ''));
+  const warnings = [
+    'Static structural analysis only; no source code execution or semantic correctness claims.',
+    'Path inventory may reveal filenames: review before sharing this report with cloud AI.',
+  ];
+  const boundedInput = input.paths.length > MAX_INPUT_PATHS ? input.paths.slice(0, MAX_INPUT_PATHS) : input.paths;
+  if (input.paths.length > MAX_INPUT_PATHS) warnings.push('Input path limit reached; additional paths were ignored.');
+  const paths = boundedInput.filter(p => safeRelativePath(p) !== null).map(p => p.replace(/^\.\//, ''));
   const unique = [...new Set(paths)];
   const languages = new Set<string>();
   for (const p of unique) {
@@ -74,15 +96,22 @@ export function analyzeProject(input: ProjectInput): ProjectFacts {
   }
   const frameworks = new Set<string>();
   const pkg = getManifest(input, 'package.json');
-  if (pkg) {
+  if (pkg.warning) warnings.push(pkg.warning);
+  if (pkg.value) {
     try {
-      const json = JSON.parse(pkg) as Record<string, unknown>;
+      const json = JSON.parse(pkg.value) as Record<string, unknown>;
       const deps = { ...(typeof json.dependencies === 'object' && json.dependencies ? json.dependencies : {}),
         ...(typeof json.devDependencies === 'object' && json.devDependencies ? json.devDependencies : {}) };
       for (const name of ['react','next','vite','vitest','jest','express']) if (Object.hasOwn(deps, name)) frameworks.add(name);
-    } catch { /* Invalid manifest: no contents leave this process. */ }
+    } catch {
+      warnings.push('Invalid package.json ignored; manifest contents were not retained.');
+    }
   }
-  const py = `${getManifest(input, 'requirements.txt')}\n${getManifest(input, 'pyproject.toml')}`;
+  const requirements = getManifest(input, 'requirements.txt');
+  const pyproject = getManifest(input, 'pyproject.toml');
+  if (requirements.warning) warnings.push(requirements.warning);
+  if (pyproject.warning) warnings.push(pyproject.warning);
+  const py = `${requirements.value}\n${pyproject.value}`;
   for (const name of ['fastapi','pytest','django','flask']) {
     if (new RegExp(`(^|[^a-z])${name}([^a-z]|$)`, 'im').test(py)) frameworks.add(name);
   }
@@ -97,10 +126,7 @@ export function analyzeProject(input: ProjectInput): ProjectFacts {
     hasGitHubActions: unique.some(p => p.startsWith('.github/workflows/')),
     hasExistingAgentInstructions: names.has('AGENTS.md') || names.has('CLAUDE.md') || names.has('GEMINI.md'),
     hasExistingSkills,
-    warnings: [
-      'Static structural analysis only; no source code execution or semantic correctness claims.',
-      'Path inventory may reveal filenames: review before sharing this report with cloud AI.',
-    ],
+    warnings,
   };
 }
 

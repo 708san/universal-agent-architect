@@ -5,11 +5,16 @@ import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts,
 
 const ignored = new Set(['node_modules', '.git', '.env', '.ssh', '.venv', 'venv', 'dist', 'coverage', 'build', '.next']);
 const manifestNames = ['package.json', 'pyproject.toml', 'requirements.txt'];
+const MAX_DEPTH = 8;
+const MAX_FILES = 5_000;
 async function scan(dir) {
   const paths = []; const manifests = {}; let count = 0;
   async function walk(relative = '', depth = 0) {
-    if (depth > 8 || count > 5000) return;
-    for (const entry of await readdir(path.join(dir, relative), { withFileTypes: true })) {
+    if (depth > MAX_DEPTH || count >= MAX_FILES) return;
+    const entries = await readdir(path.join(dir, relative), { withFileTypes: true });
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      if (count >= MAX_FILES) return;
       if (ignored.has(entry.name) || entry.name.startsWith('.env') || entry.name.endsWith('.pem') || entry.name.endsWith('.key')) continue;
       const r = relative ? `${relative}/${entry.name}` : entry.name;
       if (!safeRelativePath(r)) continue;

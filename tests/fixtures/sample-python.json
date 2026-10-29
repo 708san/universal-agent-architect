@@ -1,0 +1,25 @@
+{
+  "input": {
+    "paths": [
+      "requirements.txt",
+      "src/app.py",
+      "tests/test_app.py"
+    ],
+    "manifests": {
+      "requirements.txt": "fastapi==0.110\npytest==8.0\n"
+    }
+  },
+  "expectedFacts": {
+    "filesSeen": 3,
+    "languages": ["python"],
+    "frameworks": ["fastapi", "pytest"],
+    "hasTests": true,
+    "hasGitHubActions": false,
+    "hasExistingAgentInstructions": false,
+    "hasExistingSkills": false,
+    "warnings": [
+      "Static structural analysis only; no source code execution or semantic correctness claims.",
+      "Path inventory may reveal filenames: review before sharing this report with cloud AI."
+    ]
+  }
+}
