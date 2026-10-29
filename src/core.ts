@@ -2,6 +2,7 @@
 export type Target = 'codex' | 'claude-code' | 'gemini-cli' | 'antigravity' | 'chatgpt';
 export type WorkType = 'coding';
 export type SecurityProfile = 'baseline' | 'strict';
+export type VerificationStatus = 'verified' | 'partial' | 'planned' | 'unknown' | 'unsupported' | 'experimental';
 export type SecurityCheck =
   | 'path-traversal'
   | 'symlink-escape'
@@ -54,10 +55,20 @@ export interface DesignRequest {
   independentWorkstreams?: number;
   securityProfile?: SecurityProfile;
 }
+export interface BlueprintProvenance {
+  registryVersion: '0.1';
+  targetEdition: string;
+  targetVersion: string;
+  verificationStatus: VerificationStatus;
+  sourceUrls: string[];
+}
 export interface Blueprint {
   schemaVersion: '0.1';
   target: Target;
   workType: WorkType;
+  targetEdition: string;
+  targetVersion: string;
+  provenance: BlueprintProvenance;
   agents: { id: string; role: string }[];
   skills: { id: string; purpose: string }[];
   reasons: string[];
@@ -87,6 +98,11 @@ const SECURITY_CHECKS: SecurityCheck[] = [
   'path-traversal', 'symlink-escape', 'secret-nondisclosure', 'malformed-input',
   'unsupported-target', 'output-collision', 'no-network', 'prompt-injection',
   'tool-misuse', 'mcp-redaction', 'resource-limits',
+];
+const CODEX_SOURCE_URLS = [
+  'https://learn.chatgpt.com/docs/agent-configuration/agents-md',
+  'https://learn.chatgpt.com/docs/agent-configuration/subagents',
+  'https://learn.chatgpt.com/docs/build-skills',
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -118,6 +134,18 @@ function createSecurityRequirements(profile: SecurityProfile): SecurityRequireme
     rawSourceDisclosure: 'deny',
     requiredApprovals: ['filesystem.write', 'process.exec', 'network', 'mcp'],
     securityTests: [...(profile === 'strict' ? STRICT_SECURITY_TESTS : BASELINE_SECURITY_TESTS)],
+  };
+}
+
+function createBlueprintProvenance(target: Target): BlueprintProvenance {
+  const targetEdition = target === 'codex' ? 'CLI/IDE' : 'unknown';
+  const verificationStatus: VerificationStatus = target === 'codex' ? 'partial' : 'planned';
+  return {
+    registryVersion: '0.1',
+    targetEdition,
+    targetVersion: 'unknown',
+    verificationStatus,
+    sourceUrls: target === 'codex' ? [...CODEX_SOURCE_URLS] : [],
   };
 }
 
@@ -164,11 +192,27 @@ export function validateBlueprint(value: unknown): string[] {
   if (!isRecord(value)) return ['Blueprint must be an object.'];
   const problems: string[] = [];
   problems.push(...unknownKeys(value, [
-    'schemaVersion', 'target', 'workType', 'agents', 'skills', 'reasons', 'warnings', 'security',
+    'schemaVersion', 'target', 'workType', 'targetEdition', 'targetVersion', 'provenance',
+    'agents', 'skills', 'reasons', 'warnings', 'security',
   ], 'Blueprint'));
   if (value.schemaVersion !== '0.1') problems.push('Blueprint schemaVersion must be 0.1.');
   if (!TARGETS.includes(value.target as Target)) problems.push('Blueprint target is unsupported or invalid.');
   if (value.workType !== 'coding') problems.push('Blueprint workType must be coding.');
+  if (!isNonEmptyString(value.targetEdition)) problems.push('Blueprint targetEdition must be a non-empty string.');
+  if (!isNonEmptyString(value.targetVersion)) problems.push('Blueprint targetVersion must be a non-empty string.');
+  if (!isRecord(value.provenance)) {
+    problems.push('Blueprint provenance must be an object.');
+  } else {
+    problems.push(...unknownKeys(value.provenance, [
+      'registryVersion', 'targetEdition', 'targetVersion', 'verificationStatus', 'sourceUrls',
+    ], 'Blueprint provenance'));
+    if (value.provenance.registryVersion !== '0.1') problems.push('Blueprint provenance registryVersion must be 0.1.');
+    if (!isNonEmptyString(value.provenance.targetEdition)) problems.push('Blueprint provenance targetEdition must be a non-empty string.');
+    if (!isNonEmptyString(value.provenance.targetVersion)) problems.push('Blueprint provenance targetVersion must be a non-empty string.');
+    if (!['verified', 'partial', 'planned', 'unknown', 'unsupported', 'experimental'].includes(value.provenance.verificationStatus as string)) problems.push('Blueprint provenance verificationStatus is invalid.');
+    if (!Array.isArray(value.provenance.sourceUrls) || new Set(value.provenance.sourceUrls).size !== value.provenance.sourceUrls.length || value.provenance.sourceUrls.some(url => typeof url !== 'string' || !url.startsWith('https://'))) problems.push('Blueprint provenance sourceUrls are invalid.');
+    if (value.targetEdition !== value.provenance.targetEdition || value.targetVersion !== value.provenance.targetVersion) problems.push('Blueprint target metadata must match provenance.');
+  }
 
   if (!Array.isArray(value.agents) || value.agents.length === 0) {
     problems.push('Blueprint must contain at least one agent.');
@@ -318,8 +362,10 @@ export function proposeBlueprint(facts: ProjectFacts, req: DesignRequest): Bluep
   if (requestedProfile && requestedProfile !== 'baseline' && requestedProfile !== 'strict') {
     warnings.push('Unknown security profile; defaulted to baseline.');
   }
-  return { schemaVersion: '0.1', target: req.target, workType: req.workType, agents, skills,
-    reasons, warnings, security: createSecurityRequirements(securityProfile) };
+  const provenance = createBlueprintProvenance(req.target);
+  return { schemaVersion: '0.1', target: req.target, workType: req.workType,
+    targetEdition: provenance.targetEdition, targetVersion: provenance.targetVersion, provenance,
+    agents, skills, reasons, warnings, security: createSecurityRequirements(securityProfile) };
 }
 
 function skillMarkdown(id: string, purpose: string): string {
@@ -340,10 +386,22 @@ export function generateArtifacts(blueprint: Blueprint): GenerateResult {
   const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: skillMarkdown(s.id, s.purpose) }));
   const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
   const security = blueprint.security;
-  return { supported: true, files: [
+  const files: GeneratedArtifact[] = [
     { path: 'AGENTS.md', content: `# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Security profile: ${security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.\n- Required security checks: ${security.securityTests.join(', ')}.\n- Before edits, inspect existing instructions and present a diff.\n- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n` },
     ...skills, ...agents,
-  ] };
+  ];
+  const manifest = {
+    manifestVersion: '0.1',
+    target: blueprint.target,
+    targetEdition: blueprint.targetEdition,
+    targetVersion: blueprint.targetVersion,
+    capabilityRegistryVersion: blueprint.provenance.registryVersion,
+    verificationStatus: blueprint.provenance.verificationStatus,
+    sourceUrls: [...blueprint.provenance.sourceUrls],
+    securityProfile: security.profile,
+    files: [...files.map(file => file.path), 'UAA-MANIFEST.json'],
+  };
+  return { supported: true, files: [...files, { path: 'UAA-MANIFEST.json', content: `${JSON.stringify(manifest, null, 2)}\n` }] };
 }
 
 export function validateArtifacts(result: GenerateResult): string[] {
@@ -357,6 +415,18 @@ export function validateArtifacts(result: GenerateResult): string[] {
     if (f.path.endsWith('/SKILL.md')) {
       const match = /^---\nname: ([a-z0-9]+(?:-[a-z0-9]+)*)\ndescription: ([^\n]+)\n---\n/.exec(f.content);
       if (!match || match[1] !== f.path.split('/').at(-2) || (match[2]?.length ?? 0) > 1024) problems.push(`Invalid skill: ${f.path}`);
+    }
+    if (f.path === 'UAA-MANIFEST.json') {
+      try {
+        const manifest = JSON.parse(f.content) as Record<string, unknown>;
+        if (manifest.manifestVersion !== '0.1' || typeof manifest.target !== 'string'
+          || typeof manifest.targetEdition !== 'string' || typeof manifest.targetVersion !== 'string'
+          || typeof manifest.capabilityRegistryVersion !== 'string'
+          || typeof manifest.verificationStatus !== 'string' || !Array.isArray(manifest.sourceUrls)
+          || !Array.isArray(manifest.files) || !manifest.files.includes('UAA-MANIFEST.json')) {
+          problems.push('Invalid generation manifest.');
+        }
+      } catch { problems.push('Invalid generation manifest JSON.'); }
     }
   }
   return problems;

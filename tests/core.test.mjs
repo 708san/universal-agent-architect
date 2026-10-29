@@ -101,6 +101,11 @@ test('single agent default and review skill generation', () => {
   assert.equal(result.supported,true);
   assert.deepEqual(validateArtifacts(result),[]);
   assert.ok(result.files.some(f=>f.path==='.agents/skills/code-review/SKILL.md'));
+  const manifest = result.files.find(f => f.path === 'UAA-MANIFEST.json');
+  assert.ok(manifest);
+  assert.match(manifest.content, /"capabilityRegistryVersion": "0\.1"/);
+  assert.match(manifest.content, /"verificationStatus": "partial"/);
+  assert.ok(!manifest.content.includes('print("hello")'));
   assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/short-lived branch/);
   assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/explicit user approval/);
   assert.match(result.files.find(f=>f.path==='AGENTS.md').content,/Required security checks/);

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/708san/universal-agent-architect/schema/generation-manifest-0.1.json",
+  "title": "Universal Agent Architect Generation Manifest 0.1",
+  "description": "Deterministic provenance and validation metadata for generated artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifestVersion",
+    "target",
+    "targetEdition",
+    "targetVersion",
+    "capabilityRegistryVersion",
+    "verificationStatus",
+    "sourceUrls",
+    "securityProfile",
+    "files"
+  ],
+  "properties": {
+    "manifestVersion": { "const": "0.1" },
+    "target": { "enum": ["codex", "claude-code", "gemini-cli", "antigravity", "chatgpt"] },
+    "targetEdition": { "type": "string", "minLength": 1 },
+    "targetVersion": { "type": "string", "minLength": 1 },
+    "capabilityRegistryVersion": { "type": "string", "minLength": 1 },
+    "verificationStatus": { "enum": ["verified", "partial", "planned", "unknown", "unsupported", "experimental"] },
+    "sourceUrls": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^https://" }
+    },
+    "securityProfile": { "enum": ["baseline", "strict"] },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

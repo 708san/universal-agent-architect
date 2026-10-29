@@ -13,6 +13,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 ## P1 — Coding MVP
 - [ ] Formal schema and versioned fixtures for Blueprint and capability registry.
   - [x] Initial Blueprint 0.1 schema and production-readiness gate document.
+  - [x] Deterministic generation provenance manifest schema and output.
 - [ ] Parser for existing Codex configuration + conflicts + dry-run diffs.
   - [x] Basic metadata inventory and no-write output collision preview.
 - [ ] Robust project analysis (AST via Tree-sitter WASM), bounded file budget and OS-specific safe file traversal.

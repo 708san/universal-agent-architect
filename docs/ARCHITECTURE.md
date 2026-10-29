@@ -44,6 +44,10 @@ The canonical `Blueprint` shape is versioned in
 data shape and allowed values; it does not enforce permissions in a target runtime. Release gates are
 defined in [`docs/RELEASE_READINESS.md`](RELEASE_READINESS.md).
 
+Supported generation also emits `UAA-MANIFEST.json`, described by
+[`schemas/generation-manifest-0.1.schema.json`](../schemas/generation-manifest-0.1.schema.json), with
+target, registry, verification and security provenance. It contains no project source contents.
+
 `DesignRequest.securityProfile` selects the deterministic `baseline` or `strict` security
 requirements recorded in `Blueprint.security`. The profile is a declarative requirement and test
 plan; target adapters must enforce it and report unsupported enforcement visibly.

@@ -9,6 +9,9 @@
     "schemaVersion",
     "target",
     "workType",
+    "targetEdition",
+    "targetVersion",
+    "provenance",
     "agents",
     "skills",
     "reasons",
@@ -25,6 +28,9 @@
     "workType": {
       "const": "coding"
     },
+    "targetEdition": { "type": "string", "minLength": 1 },
+    "targetVersion": { "type": "string", "minLength": 1 },
+    "provenance": { "$ref": "#/$defs/provenance" },
     "agents": {
       "type": "array",
       "minItems": 1,
@@ -118,6 +124,22 @@
               "resource-limits"
             ]
           }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registryVersion", "targetEdition", "targetVersion", "verificationStatus", "sourceUrls"],
+      "properties": {
+        "registryVersion": { "const": "0.1" },
+        "targetEdition": { "type": "string", "minLength": 1 },
+        "targetVersion": { "type": "string", "minLength": 1 },
+        "verificationStatus": { "enum": ["verified", "partial", "planned", "unknown", "unsupported", "experimental"] },
+        "sourceUrls": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^https://" }
         }
       }
     }
