@@ -1,6 +1,6 @@
 # Plan 0012 — Generation provenance manifest
 
-Status: in progress
+Status: complete
 
 ## Objective
 
@@ -34,5 +34,5 @@ are modified.
 ## Progress
 
 - [x] Plan written before implementation.
-- [ ] Add provenance fields, manifest schema and renderer output.
+- [x] Add provenance fields, manifest schema and renderer output.
 - [x] Add tests and record checks: `npm run check` passed (25 tests); `git diff --check` passed.
