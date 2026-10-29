@@ -9,18 +9,14 @@
 <label><input id="review" type="checkbox" checked> コードレビューを追加</label><button id="run">構成を解析・提案</button>
 <p class="note">未実装の出力先は「未対応」と表示します。表示結果にファイル名そのものは含めません。</p><pre id="output" aria-live="polite">フォルダを選択してください。</pre>
 </main><script type="module">
-import { analyzeProject,normalizeBrowserRelativePaths,proposeBlueprint,generateArtifacts,validateArtifacts } from '../dist/core.js';
+import { analyzeProject,proposeBlueprint,generateArtifacts,validateArtifacts } from '../dist/core.js';
+import { collectBrowserInput } from './browser-input.mjs';
 const $=id=>document.getElementById(id);
 $('run').addEventListener('click', async()=>{
   const entries=[...$('files').files];
   if(!entries.length){$('output').textContent='先にフォルダを選択してください。';return;}
-  const manifests={}; const paths=[];
-  const normalizedPaths=normalizeBrowserRelativePaths(entries.map(f=>f.webkitRelativePath||f.name));
-  for(const [index,f] of entries.entries()){const p=normalizedPaths[index];if(!p)continue;paths.push(p);
-    const base=p.includes('/')?'':p;
-    if(['package.json','pyproject.toml','requirements.txt'].includes(base)&&f.size<=100000)manifests[base]=await f.text();
-  }
-  const facts=analyzeProject({paths,manifests});
+  const input=await collectBrowserInput(entries);
+  const facts=analyzeProject(input);
   const blueprint=proposeBlueprint(facts,{target:$('target').value,workType:'coding',needsReview:$('review').checked,securityProfile:$('security').value});
   const rendered=generateArtifacts(blueprint);
   $('output').textContent=JSON.stringify({facts,blueprint,rendering:{supported:rendered.supported,generatedFiles:rendered.files.map(f=>f.path),problems:validateArtifacts(rendered)}},null,2);

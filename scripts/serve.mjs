@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 const root = process.cwd();
 const port = Number(process.env.UAA_SERVE_PORT ?? 4173);
-const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 createServer(async (req, res) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, { allow: 'GET, HEAD' }).end(); return; }
   let pathname;
@@ -12,7 +12,7 @@ createServer(async (req, res) => {
   catch { res.writeHead(400).end(); return; }
   const file = path.resolve(root, `.${pathname === '/' ? '/web/index.html' : pathname}`);
   if (file !== root && !file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
-  if (!['/web/index.html', '/dist/core.js'].includes(pathname === '/' ? '/web/index.html' : pathname)) { res.writeHead(404).end(); return; }
+  if (!['/web/index.html', '/web/browser-input.mjs', '/dist/core.js'].includes(pathname === '/' ? '/web/index.html' : pathname)) { res.writeHead(404).end(); return; }
   try {
     const content = await readFile(file);
     res.writeHead(200, {
