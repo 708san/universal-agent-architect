@@ -5,19 +5,21 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 ## P0 — Foundation (this repository)
 - [x] Project overview, scope, security rules, Codex guidance, focused skills, specialist reviewers.
 - [x] Pure TS rule-based prototype, safe project inventory, Codex sample generator, tests, basic browser/CLI.
-- [ ] Confirm CI on GitHub; publish in private repository; create issues from `docs/BACKLOG.md`; commit a reviewed dependency lockfile.
-- [ ] Fix documented prototype limitations and add fixture-based integration tests.
+- [x] Confirm CI on GitHub, publish the public repository by project decision, and commit a reviewed dependency lockfile.
+- [ ] Create GitHub issues from `docs/BACKLOG.md` (external Web action remains).
+- [x] Add fixture-based integration tests for CLI/browser convergence, scanner boundaries, dry-run output and planner decisions.
+- [ ] Fix remaining prototype limitations, including ZIP import/export and full target verification.
 
 **Exit:** offline `npm run check` succeeds, prototype works, and documents clearly distinguish implemented vs planned.
 
 ## P1 — Coding MVP
-- [ ] Formal schema and versioned fixtures for Blueprint and capability registry.
+- [x] Formal schema and versioned fixtures for Blueprint and capability registry.
   - [x] Initial Blueprint 0.1 schema and production-readiness gate document.
   - [x] Deterministic generation provenance manifest schema and output.
 - [ ] Parser for existing Codex configuration + conflicts + dry-run diffs.
   - [x] Basic metadata inventory and no-write output collision preview.
 - [ ] Robust project analysis (AST via Tree-sitter WASM), bounded file budget and OS-specific safe file traversal.
-- [ ] Minimal decision engine with explainability and eval fixtures; no unnecessary agent inflation.
+- [x] Minimal decision engine with explainability and eval fixtures; no unnecessary agent inflation.
   - [x] Initial small/medium/large planner evaluation fixtures.
 - [ ] Verified Codex adapter covering rules/skills and supported subagent/MCP proposals.
 - [ ] Browser ZIP import/export; safe directory selection fallback; static Pages deploy only after CSP/security tests.

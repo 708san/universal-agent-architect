@@ -1,6 +1,6 @@
 # Plan 0011 — Planner evaluation suite
 
-Status: in progress
+Status: complete
 
 ## Objective
 

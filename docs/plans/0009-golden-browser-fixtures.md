@@ -1,6 +1,6 @@
 # Plan 0009 — Golden CLI/browser fixtures
 
-Status: in progress
+Status: complete
 
 ## Objective
 

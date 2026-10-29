@@ -1,6 +1,6 @@
 # Plan 0007 — Browser offline boundary
 
-Status: in progress
+Status: complete
 
 ## Objective
 
