@@ -1,35 +1,60 @@
 #!/usr/bin/env node
-import { lstat, readdir, readFile, mkdir, writeFile, access } from 'node:fs/promises';
+import { lstat, readdir, readFile, mkdir, writeFile, access, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts, safeRelativePath } from '../dist/core.js';
 
-const ignored = new Set(['node_modules', '.git', '.env', '.ssh', '.venv', 'venv', 'dist', 'coverage', 'build', '.next']);
+const ignored = new Set(['node_modules', '.git', '.env', '.ssh', '.aws', '.npmrc', '.venv', 'venv', 'dist', 'coverage', 'build', '.next', 'secrets', 'private']);
 const manifestNames = ['package.json', 'pyproject.toml', 'requirements.txt'];
 const MAX_DEPTH = 8;
 const MAX_FILES = 5_000;
 async function scan(dir) {
-  const paths = []; const manifests = {}; let count = 0;
+  const rootStat = await lstat(dir);
+  if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) throw new Error('Expected a non-symlink directory');
+  const rootReal = await realpath(dir);
+  const paths = []; const manifests = {}; const warnings = []; const warningSet = new Set(); let count = 0;
+  const warn = message => { if (!warningSet.has(message)) { warningSet.add(message); warnings.push(message); } };
+  const shouldSkip = entry => {
+    const lower = entry.name.toLowerCase();
+    return ignored.has(lower) || lower.startsWith('.env') || /\.(pem|key|p12|pfx)$/i.test(entry.name)
+      || (entry.name.startsWith('.') && entry.name !== '.github');
+  };
+  const isInsideRoot = async candidate => {
+    const resolved = await realpath(candidate).catch(() => null);
+    if (!resolved || (resolved !== rootReal && !resolved.startsWith(rootReal + path.sep))) {
+      warn('Skipped an entry outside the approved root.');
+      return false;
+    }
+    return true;
+  };
   async function walk(relative = '', depth = 0) {
-    if (depth > MAX_DEPTH || count >= MAX_FILES) return;
-    const entries = await readdir(path.join(dir, relative), { withFileTypes: true });
+    if (depth > MAX_DEPTH || count >= MAX_FILES) { warn('Inventory scan limit reached; additional entries were ignored.'); return; }
+    let entries;
+    try { entries = await readdir(path.join(dir, relative), { withFileTypes: true }); }
+    catch { warn('Skipped an unreadable directory.'); return; }
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
-      if (count >= MAX_FILES) return;
-      if (ignored.has(entry.name) || entry.name.startsWith('.env') || entry.name.endsWith('.pem') || entry.name.endsWith('.key')) continue;
+      if (count >= MAX_FILES) { warn('Inventory scan limit reached; additional entries were ignored.'); return; }
+      if (shouldSkip(entry)) continue;
       const r = relative ? `${relative}/${entry.name}` : entry.name;
       if (!safeRelativePath(r)) continue;
-      const stat = await lstat(path.join(dir, r));
-      if (stat.isSymbolicLink()) continue;
-      if (stat.isDirectory()) await walk(r, depth + 1);
+      const candidate = path.join(dir, r);
+      const stat = await lstat(candidate).catch(() => null);
+      if (!stat || stat.isSymbolicLink()) continue;
+      if (!await isInsideRoot(candidate)) continue;
+      if (stat.isDirectory()) {
+        if (depth >= MAX_DEPTH) { warn('Inventory scan depth limit reached; deeper directories were ignored.'); continue; }
+        await walk(r, depth + 1);
+      }
       else if (stat.isFile()) {
         paths.push(r); count++;
         if (relative === '' && manifestNames.includes(entry.name) && stat.size <= 100_000) {
-          manifests[entry.name] = await readFile(path.join(dir, r), 'utf8');
+          try { manifests[entry.name] = await readFile(candidate, 'utf8'); }
+          catch { warn('Skipped an unreadable manifest.'); }
         }
       }
     }
   }
-  await walk(); return { paths, manifests };
+  await walk(); return { paths, manifests, warnings };
 }
 async function main() {
   const [command = 'help', folder = '.', target = 'codex', securityProfile = 'baseline'] = process.argv.slice(2);

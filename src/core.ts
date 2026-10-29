@@ -41,6 +41,8 @@ export interface ProjectInput {
   paths: string[];
   /** Only allowlisted manifest contents; never pass secrets or source by default. */
   manifests?: Record<string, string>;
+  /** Scanner boundary warnings; do not include raw paths or file contents. */
+  warnings?: string[];
 }
 export interface DesignRequest {
   target: Target;
@@ -231,6 +233,7 @@ function getManifest(input: ProjectInput, name: string): { value: string; warnin
 /** Build a minimal facts object without preserving source file contents. */
 export function analyzeProject(input: ProjectInput): ProjectFacts {
   const warnings = [
+    ...(input.warnings ?? []),
     'Static structural analysis only; no source code execution or semantic correctness claims.',
     'Path inventory may reveal filenames: review before sharing this report with cloud AI.',
   ];

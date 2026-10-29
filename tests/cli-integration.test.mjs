@@ -16,16 +16,44 @@ test('CLI excludes private files, never modifies source and refuses overwrite', 
     await writeFile(path.join(project,'requirements.txt'),'fastapi==0.1\n');
     await writeFile(path.join(project,'.env.local'),'PRIVATE=never_echo_me\n');
     await symlink(path.join(root,'missing-outside-file'),path.join(project,'external-symlink'));
+    await mkdir(path.join(root, 'outside'), { recursive: true });
+    await writeFile(path.join(root, 'outside', 'outside-secret.txt'), 'outside data');
+    await symlink(path.join(root, 'outside'), path.join(project, 'external-directory'));
     const analyze = spawnSync(process.execPath,[cli,'analyze',project,'codex'],{cwd:root,encoding:'utf8'});
     assert.equal(analyze.status,0,analyze.stderr);
     assert.ok(!analyze.stdout.includes('never_echo_me'));
+    assert.ok(!analyze.stdout.includes('outside-secret.txt'));
     assert.equal(JSON.parse(analyze.stdout).facts.filesSeen,2);
     const first = spawnSync(process.execPath,[cli,'generate',project,'codex'],{cwd:root,encoding:'utf8'});
     assert.equal(first.status,0,first.stderr);
-    assert.deepEqual((await readdir(project)).sort(),['.env.local','external-symlink','requirements.txt','src'].sort());
+    assert.deepEqual((await readdir(project)).sort(),['.env.local','external-directory','external-symlink','requirements.txt','src'].sort());
     assert.match(await readFile(path.join(root,'generated','project','AGENTS.md'),'utf8'),/Project instructions/);
     const second = spawnSync(process.execPath,[cli,'generate',project,'codex'],{cwd:root,encoding:'utf8'});
     assert.notEqual(second.status,0);
     assert.match(second.stderr,/Refusing overwrite/);
   } finally { await rm(root,{recursive:true,force:true}); }
+});
+
+test('CLI skips hidden directories and limits traversal depth', async () => {
+  const root = await mkdtemp(path.join(tmpdir(),'uaa-'));
+  const project = path.join(root,'project');
+  try {
+    await mkdir(path.join(project, '.hidden'), { recursive: true });
+    await writeFile(path.join(project, '.hidden', 'secret.txt'), 'do not inventory');
+    await mkdir(path.join(project, '.github', 'workflows'), { recursive: true });
+    await writeFile(path.join(project, '.github', 'workflows', 'ci.yml'), 'name: CI\n');
+    let nested = project;
+    for (let index = 0; index < 9; index++) {
+      nested = path.join(nested, `level-${index}`);
+      await mkdir(nested);
+    }
+    await writeFile(path.join(nested, 'too-deep.ts'), 'not read');
+    const analyze = spawnSync(process.execPath, [cli, 'analyze', project, 'codex'], { cwd: root, encoding: 'utf8' });
+    assert.equal(analyze.status, 0, analyze.stderr);
+    const output = JSON.parse(analyze.stdout);
+    assert.ok(output.facts.hasGitHubActions);
+    assert.ok(!output.facts.warnings.some(warning => warning.includes('secret.txt')));
+    assert.ok(output.facts.warnings.some(warning => warning.includes('depth limit')));
+    assert.ok(!output.facts.warnings.some(warning => warning.includes('too-deep.ts')));
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
