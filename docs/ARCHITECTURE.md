@@ -26,6 +26,10 @@ The CLI can inspect declared MCP configuration with `analyze --mcp-config`. This
 discovery only: it reads bounded `.mcp.json`, `.gemini/settings.json` and `.codex/config.toml` entries,
 never resolves values, starts a server or contacts a URL.
 
+The Claude Code adapter renders only documented project `CLAUDE.md`, `.claude/skills/**/SKILL.md` and
+optional read-only `.claude/agents/*.md` files. Runtime loading, permissions, hooks, plugins and MCP
+behavior remain unverified and are recorded as partial compatibility evidence.
+
 The browser prototype also supports bounded, local-only ZIP import/export through a dependency-free
 store-only ZIP helper. Unsupported compression, traversal, symlink entries, malformed headers and
 resource-limit violations are rejected before files reach the metadata analyzer.

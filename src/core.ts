@@ -1,4 +1,6 @@
 /** Universal Agent Architect: pure, offline-first, dependency-free core (prototype). */
+import { CLAUDE_CODE_SOURCE_URLS, renderClaudeArtifacts } from './claude-adapter.js';
+
 export type Target = 'codex' | 'claude-code' | 'gemini-cli' | 'antigravity' | 'chatgpt';
 export type WorkType = 'coding';
 export type SecurityProfile = 'baseline' | 'strict';
@@ -77,7 +79,7 @@ export interface Blueprint {
 }
 export interface GeneratedArtifact { path: string; content: string }
 export interface GenerateResult { supported: boolean; reason?: string; files: GeneratedArtifact[] }
-export type OutputConflictCategory = 'instruction' | 'skill' | 'codex-setting' | 'project-file';
+export type OutputConflictCategory = 'instruction' | 'skill' | 'codex-setting' | 'target-agent' | 'project-file';
 export interface OutputConflict { path: string; category: OutputConflictCategory }
 export type OutputChangeAction = 'add' | 'replace';
 export interface OutputChange { path: string; action: OutputChangeAction; category: OutputConflictCategory }
@@ -147,14 +149,14 @@ function createSecurityRequirements(profile: SecurityProfile): SecurityRequireme
 }
 
 function createBlueprintProvenance(target: Target): BlueprintProvenance {
-  const targetEdition = target === 'codex' ? 'CLI/IDE' : 'unknown';
-  const verificationStatus: VerificationStatus = target === 'codex' ? 'partial' : 'planned';
+  const targetEdition = target === 'codex' ? 'CLI/IDE' : target === 'claude-code' ? 'CLI' : 'unknown';
+  const verificationStatus: VerificationStatus = target === 'codex' || target === 'claude-code' ? 'partial' : 'planned';
   return {
     registryVersion: '0.1',
     targetEdition,
     targetVersion: 'unknown',
     verificationStatus,
-    sourceUrls: target === 'codex' ? [...CODEX_SOURCE_URLS] : [],
+    sourceUrls: target === 'codex' ? [...CODEX_SOURCE_URLS] : target === 'claude-code' ? [...CLAUDE_CODE_SOURCE_URLS] : [],
   };
 }
 
@@ -365,7 +367,8 @@ export function proposeBlueprint(facts: ProjectFacts, req: DesignRequest): Bluep
   }
   const warnings = [...facts.warnings];
   if (facts.hasExistingAgentInstructions || facts.hasExistingSkills) warnings.push('Existing instructions or skills detected: compare before applying.');
-  if (req.target !== 'codex') warnings.push(`Rendering for ${req.target} is planned, not implemented in the prototype.`);
+  if (req.target === 'claude-code') warnings.push('Claude Code rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
+  else if (req.target !== 'codex') warnings.push(`Rendering for ${req.target} is planned, not implemented in the prototype.`);
   const requestedProfile = req.securityProfile as string | undefined;
   const securityProfile: SecurityProfile = requestedProfile === 'strict' ? 'strict' : 'baseline';
   if (requestedProfile && requestedProfile !== 'baseline' && requestedProfile !== 'strict') {
@@ -391,20 +394,26 @@ function skillMarkdown(id: string, purpose: string): string {
   return `---\nname: ${id}\ndescription: ${purpose} Use when the user explicitly requests this workflow.\n---\n\n# ${id}\n\n${safety}\n\n${instruction}\n`;
 }
 
-/** Render only verified Codex files; other targets must not silently receive fake output. */
+/** Render only target files with reviewed format evidence; other targets fail visibly. */
 export function generateArtifacts(blueprint: Blueprint): GenerateResult {
   const blueprintProblems = validateBlueprint(blueprint);
   if (blueprintProblems.length) return { supported: false, reason: blueprintProblems.join('; '), files: [] };
-  if (blueprint.target !== 'codex') return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
+  if (blueprint.target !== 'codex' && blueprint.target !== 'claude-code') return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
   const securityProblems = validateSecurityRequirements(blueprint.security);
   if (securityProblems.length) return { supported: false, reason: securityProblems.join('; '), files: [] };
-  const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: skillMarkdown(s.id, s.purpose) }));
-  const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
+  const targetFiles = blueprint.target === 'claude-code'
+    ? renderClaudeArtifacts(blueprint)
+    : (() => {
+      const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: skillMarkdown(s.id, s.purpose) }));
+      const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
+      return [
+        { path: 'AGENTS.md', content: `# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Security profile: ${blueprint.security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.\n- Required security checks: ${blueprint.security.securityTests.join(', ')}.\n- Before edits, inspect existing instructions and present a diff.\n- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n` },
+        ...skills,
+        ...agents,
+      ];
+    })();
   const security = blueprint.security;
-  const files: GeneratedArtifact[] = [
-    { path: 'AGENTS.md', content: `# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Security profile: ${security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.\n- Required security checks: ${security.securityTests.join(', ')}.\n- Before edits, inspect existing instructions and present a diff.\n- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n` },
-    ...skills, ...agents,
-  ];
+  const files: GeneratedArtifact[] = [...targetFiles];
   const manifest = {
     manifestVersion: '0.1',
     target: blueprint.target,
@@ -442,6 +451,16 @@ export function validateArtifacts(result: GenerateResult): string[] {
       const filename = f.path.split('/').at(-1)?.replace(/\.toml$/, '');
       if (!name || !description || !instructions || name !== filename) {
         problems.push(`Invalid Codex custom agent: ${f.path}`);
+      }
+    }
+    if (/^\.claude\/agents\/[^/]+\.md$/.test(f.path)) {
+      const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(f.content)?.[1] ?? '';
+      const name = /^name:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const description = /^description:\s*(.+)$/m.exec(frontmatter)?.[1]?.trim();
+      const tools = /^tools:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const filename = f.path.split('/').at(-1)?.replace(/\.md$/, '');
+      if (!name || !description || !tools || name !== filename || !/^Read, Glob, Grep$/.test(tools)) {
+        problems.push(`Invalid Claude Code custom agent: ${f.path}`);
       }
     }
     if (f.path === 'UAA-MANIFEST.json') {
@@ -503,11 +522,13 @@ export function findOutputConflicts(existingPaths: string[], files: GeneratedArt
 function outputConflictCategory(path: string): OutputConflictCategory {
   return /(^|\/)(?:AGENTS(?:\.override)?|CLAUDE|GEMINI)\.md$/i.test(path)
     ? 'instruction'
-    : /^(?:\.agents\/skills|skills)\/[^/]+\/SKILL\.md$/i.test(path)
+    : /^(?:\.agents\/skills|\.claude\/skills|skills)\/[^/]+\/SKILL\.md$/i.test(path)
       ? 'skill'
       : /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(path)
         ? 'codex-setting'
-        : 'project-file';
+        : /^\.claude\/agents\/[^/]+\.md$/i.test(path)
+          ? 'target-agent'
+          : 'project-file';
 }
 
 /** Describe a read-only dry-run as additions and replacements without comparing file contents. */

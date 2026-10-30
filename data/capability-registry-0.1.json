@@ -26,17 +26,21 @@
       "target": "claude-code",
       "edition": "CLI",
       "version": "unknown",
-      "checkedAt": "2026-10-29",
-      "status": "planned",
-      "sourceUrls": [],
+      "checkedAt": "2026-10-30",
+      "status": "partial",
+      "sourceUrls": [
+        "https://code.claude.com/docs/en/memory",
+        "https://code.claude.com/docs/en/skills",
+        "https://code.claude.com/docs/en/sub-agents"
+      ],
       "capabilities": {
-        "instructions": "unknown",
-        "skills": "unknown",
-        "subagents": "unknown",
+        "instructions": "partial",
+        "skills": "partial",
+        "subagents": "partial",
         "mcp": "unknown"
       },
-      "fixtureIds": [],
-      "notes": "Target family is planned; no renderer or verified fixture is included."
+      "fixtureIds": ["tests/fixtures/claude-code-adapter-0.1.json", "tests/claude-adapter.test.mjs"],
+      "notes": "Renderer and validators cover documented project CLAUDE.md, Agent Skills and read-only subagent frontmatter. Runtime loading, permission enforcement, hooks, plugins and MCP behavior are not verified."
     },
     {
       "target": "gemini-cli",
