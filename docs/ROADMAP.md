@@ -18,6 +18,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
   - [x] Deterministic generation provenance manifest schema and output.
 - [ ] Parser for existing Codex configuration + conflicts + dry-run diffs.
   - [x] Basic metadata inventory and no-write output collision preview.
+  - [x] Source-project conflict categories are reported separately in dry-run output.
 - [ ] Robust project analysis (AST via Tree-sitter WASM), bounded file budget and OS-specific safe file traversal.
 - [x] Minimal decision engine with explainability and eval fixtures; no unnecessary agent inflation.
   - [x] Initial small/medium/large planner evaluation fixtures.
