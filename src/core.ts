@@ -1,6 +1,7 @@
 /** Universal Agent Architect: pure, offline-first, dependency-free core (prototype). */
 import { CLAUDE_CODE_SOURCE_URLS, renderClaudeArtifacts } from './claude-adapter.js';
 import { GEMINI_CLI_SOURCE_URLS, renderGeminiArtifacts } from './gemini-adapter.js';
+import { ANTIGRAVITY_SOURCE_URLS, renderAntigravityArtifacts } from './antigravity-adapter.js';
 
 export type Target = 'codex' | 'claude-code' | 'gemini-cli' | 'antigravity' | 'chatgpt';
 export type WorkType = 'coding';
@@ -150,8 +151,8 @@ function createSecurityRequirements(profile: SecurityProfile): SecurityRequireme
 }
 
 function createBlueprintProvenance(target: Target): BlueprintProvenance {
-  const targetEdition = target === 'codex' ? 'CLI/IDE' : ['claude-code', 'gemini-cli'].includes(target) ? 'CLI' : 'unknown';
-  const verificationStatus: VerificationStatus = ['codex', 'claude-code', 'gemini-cli'].includes(target) ? 'partial' : 'planned';
+  const targetEdition = target === 'codex' ? 'CLI/IDE' : target === 'antigravity' ? 'App/CLI/IDE' : ['claude-code', 'gemini-cli'].includes(target) ? 'CLI' : 'unknown';
+  const verificationStatus: VerificationStatus = ['codex', 'claude-code', 'gemini-cli', 'antigravity'].includes(target) ? 'partial' : 'planned';
   return {
     registryVersion: '0.1',
     targetEdition,
@@ -163,6 +164,8 @@ function createBlueprintProvenance(target: Target): BlueprintProvenance {
         ? [...CLAUDE_CODE_SOURCE_URLS]
         : target === 'gemini-cli'
           ? [...GEMINI_CLI_SOURCE_URLS]
+          : target === 'antigravity'
+            ? [...ANTIGRAVITY_SOURCE_URLS]
           : [],
   };
 }
@@ -376,6 +379,7 @@ export function proposeBlueprint(facts: ProjectFacts, req: DesignRequest): Bluep
   if (facts.hasExistingAgentInstructions || facts.hasExistingSkills) warnings.push('Existing instructions or skills detected: compare before applying.');
   if (req.target === 'claude-code') warnings.push('Claude Code rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
   else if (req.target === 'gemini-cli') warnings.push('Gemini CLI rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
+  else if (req.target === 'antigravity') warnings.push('Antigravity rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
   else if (req.target !== 'codex') warnings.push(`Rendering for ${req.target} is planned, not implemented in the prototype.`);
   const requestedProfile = req.securityProfile as string | undefined;
   const securityProfile: SecurityProfile = requestedProfile === 'strict' ? 'strict' : 'baseline';
@@ -406,14 +410,16 @@ function skillMarkdown(id: string, purpose: string): string {
 export function generateArtifacts(blueprint: Blueprint): GenerateResult {
   const blueprintProblems = validateBlueprint(blueprint);
   if (blueprintProblems.length) return { supported: false, reason: blueprintProblems.join('; '), files: [] };
-  if (!['codex', 'claude-code', 'gemini-cli'].includes(blueprint.target)) return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
+  if (!['codex', 'claude-code', 'gemini-cli', 'antigravity'].includes(blueprint.target)) return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
   const securityProblems = validateSecurityRequirements(blueprint.security);
   if (securityProblems.length) return { supported: false, reason: securityProblems.join('; '), files: [] };
   const targetFiles = blueprint.target === 'claude-code'
     ? renderClaudeArtifacts(blueprint)
     : blueprint.target === 'gemini-cli'
       ? renderGeminiArtifacts(blueprint)
-      : (() => {
+      : blueprint.target === 'antigravity'
+        ? renderAntigravityArtifacts(blueprint)
+        : (() => {
       const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: skillMarkdown(s.id, s.purpose) }));
       const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
       return [
@@ -486,6 +492,22 @@ export function validateArtifacts(result: GenerateResult): string[] {
         problems.push(`Invalid Gemini CLI custom agent: ${f.path}`);
       }
     }
+    if (/^\.agents\/agents\/[^/]+\.md$/.test(f.path)) {
+      const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(f.content)?.[1] ?? '';
+      const name = /^name:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const description = /^description:\s*(.+)$/m.exec(frontmatter)?.[1]?.trim();
+      const toolLines = /^tools:\n((?:\s+-\s+[^\n]+\n?)+)/m.exec(frontmatter)?.[1] ?? '';
+      const tools = [...toolLines.matchAll(/^\s+-\s+([^\n]+)$/gm)].map(match => match[1]?.trim());
+      const subagent = /^subagent:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const mainAgent = /^mainAgent:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const model = /^model:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const policy = /^commandExecutionPolicy:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const filename = f.path.split('/').at(-1)?.replace(/\.md$/, '');
+      if (!name || !description || name !== filename || tools.join(',') !== 'view_file,grep_search'
+        || subagent !== 'true' || mainAgent !== 'false' || model !== 'inherit' || policy !== 'off') {
+        problems.push(`Invalid Antigravity custom agent: ${f.path}`);
+      }
+    }
     if (f.path === 'UAA-MANIFEST.json') {
       try {
         manifest = JSON.parse(f.content) as Record<string, unknown>;
@@ -549,7 +571,7 @@ function outputConflictCategory(path: string): OutputConflictCategory {
       ? 'skill'
       : /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(path)
         ? 'codex-setting'
-        : /^(?:\.claude|\.gemini)\/agents\/[^/]+\.md$/i.test(path)
+        : /^(?:\.claude|\.gemini|\.agents)\/agents\/[^/]+\.md$/i.test(path)
           ? 'target-agent'
           : 'project-file';
 }

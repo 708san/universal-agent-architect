@@ -53,7 +53,7 @@ test('Gemini CLI adapter rejects malformed subagent output and unsupported targe
   };
   assert.ok(validateArtifacts(malformed).some(problem => problem.includes('Gemini CLI custom agent')));
 
-  const unsupported = generateArtifacts(proposeBlueprint(facts, { target: 'antigravity', workType: 'coding' }));
+  const unsupported = generateArtifacts(proposeBlueprint(facts, { target: 'chatgpt', workType: 'coding' }));
   assert.equal(unsupported.supported, false);
   assert.match(unsupported.reason, /not yet implemented/);
   assert.deepEqual(unsupported.files, []);

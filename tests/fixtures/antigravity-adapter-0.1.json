@@ -1,0 +1,10 @@
+{
+  "target": "antigravity",
+  "formats": {
+    "instructionFile": "AGENTS.md",
+    "skillRoot": ".agents/skills",
+    "subagentRoot": ".agents/agents",
+    "subagentRequiredFields": ["name", "description", "tools", "subagent", "mainAgent", "model", "commandExecutionPolicy"]
+  },
+  "runtimeEvidence": "not-tested"
+}
