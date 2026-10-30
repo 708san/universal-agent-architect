@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Offline-first agent architecture planner — early prototype",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/copy-ast-assets.mjs",
     "test": "npm run build && node --test tests/*.test.mjs",
     "check": "npm run test && node scripts/check-skills.mjs && node scripts/check-capability-registry.mjs",
     "plan": "node scripts/cli.mjs",

@@ -32,18 +32,32 @@ test('static browser boundary is local-only and allowlisted', async () => {
   assert.equal(page.status, 200);
   const csp = page.headers.get('content-security-policy');
   assert.match(csp, /default-src 'none'/);
+  assert.match(csp, /script-src 'self' 'sha256-TYtj7t8BjFvc8RY550tH\/cFAE0l1pYZ3xHEQoEVgA4U='/);
   assert.match(csp, /connect-src 'none'/);
   assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
   assert.equal(page.headers.get('x-content-type-options'), 'nosniff');
 
   const html = await page.text();
   for (const api of ['fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon']) assert.doesNotMatch(html, new RegExp(api.replace('(', '\\(')));
-  assert.match(html, /FileReader|\.files/);
+  assert.doesNotMatch(html, /<script type="module">/);
+  assert.match(html, /importmap/);
+  const app = await fetch(`${base}/web/app.mjs`);
+  assert.equal(app.status, 200);
+  assert.match(await app.text(), /\.files/);
 
   assert.equal((await fetch(`${base}/dist/core.js`)).status, 200);
+  assert.equal((await fetch(`${base}/dist/ast-analyzer.js`)).status, 200);
+  assert.equal((await fetch(`${base}/web/app.mjs`)).status, 200);
   assert.equal((await fetch(`${base}/web/browser-input.mjs`)).status, 200);
   assert.equal((await fetch(`${base}/web/browser-zip.mjs`)).status, 200);
+  for (const asset of [
+    '/web/vendor/web-tree-sitter.js',
+    '/web/vendor/web-tree-sitter.wasm',
+    '/web/vendor/tree-sitter-python.wasm',
+    '/web/vendor/tree-sitter-typescript.wasm',
+  ]) assert.equal((await fetch(`${base}${asset}`)).status, 200);
   assert.equal((await fetch(`${base}/package.json`)).status, 404);
+  assert.equal((await fetch(`${base}/web/vendor/package.json`)).status, 404);
   assert.equal((await fetch(`${base}/%2e%2e/.env`)).status, 404);
   assert.equal((await fetch(`${base}/`, { method: 'POST' })).status, 405);
 });
