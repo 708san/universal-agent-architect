@@ -1,0 +1,10 @@
+{
+  "target": "gemini-cli",
+  "formats": {
+    "instructionFile": "GEMINI.md",
+    "skillRoot": ".gemini/skills",
+    "subagentRoot": ".gemini/agents",
+    "subagentRequiredFields": ["name", "description", "kind", "tools"]
+  },
+  "runtimeEvidence": "not-tested"
+}

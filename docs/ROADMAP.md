@@ -42,6 +42,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [x] Local MCP stdio with read-only operations first; test data minimization and injected text threats.
 - [ ] Target adapters for Claude Code, Gemini CLI, Antigravity, ChatGPT (each staged and verified separately).
   - [x] Claude Code format-level renderer for `CLAUDE.md`, Skills and read-only subagent definitions.
+  - [x] Gemini CLI format-level renderer for `GEMINI.md`, Skills and read-only subagent definitions.
 - [x] MCP discovery from configuration only (no auto-start of arbitrary third-party servers).
 
 **Exit:** repeatable tests for every declared target; local MCP works without disclosing raw files by default.

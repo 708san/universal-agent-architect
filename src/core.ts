@@ -1,5 +1,6 @@
 /** Universal Agent Architect: pure, offline-first, dependency-free core (prototype). */
 import { CLAUDE_CODE_SOURCE_URLS, renderClaudeArtifacts } from './claude-adapter.js';
+import { GEMINI_CLI_SOURCE_URLS, renderGeminiArtifacts } from './gemini-adapter.js';
 
 export type Target = 'codex' | 'claude-code' | 'gemini-cli' | 'antigravity' | 'chatgpt';
 export type WorkType = 'coding';
@@ -149,14 +150,20 @@ function createSecurityRequirements(profile: SecurityProfile): SecurityRequireme
 }
 
 function createBlueprintProvenance(target: Target): BlueprintProvenance {
-  const targetEdition = target === 'codex' ? 'CLI/IDE' : target === 'claude-code' ? 'CLI' : 'unknown';
-  const verificationStatus: VerificationStatus = target === 'codex' || target === 'claude-code' ? 'partial' : 'planned';
+  const targetEdition = target === 'codex' ? 'CLI/IDE' : ['claude-code', 'gemini-cli'].includes(target) ? 'CLI' : 'unknown';
+  const verificationStatus: VerificationStatus = ['codex', 'claude-code', 'gemini-cli'].includes(target) ? 'partial' : 'planned';
   return {
     registryVersion: '0.1',
     targetEdition,
     targetVersion: 'unknown',
     verificationStatus,
-    sourceUrls: target === 'codex' ? [...CODEX_SOURCE_URLS] : target === 'claude-code' ? [...CLAUDE_CODE_SOURCE_URLS] : [],
+    sourceUrls: target === 'codex'
+      ? [...CODEX_SOURCE_URLS]
+      : target === 'claude-code'
+        ? [...CLAUDE_CODE_SOURCE_URLS]
+        : target === 'gemini-cli'
+          ? [...GEMINI_CLI_SOURCE_URLS]
+          : [],
   };
 }
 
@@ -368,6 +375,7 @@ export function proposeBlueprint(facts: ProjectFacts, req: DesignRequest): Bluep
   const warnings = [...facts.warnings];
   if (facts.hasExistingAgentInstructions || facts.hasExistingSkills) warnings.push('Existing instructions or skills detected: compare before applying.');
   if (req.target === 'claude-code') warnings.push('Claude Code rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
+  else if (req.target === 'gemini-cli') warnings.push('Gemini CLI rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
   else if (req.target !== 'codex') warnings.push(`Rendering for ${req.target} is planned, not implemented in the prototype.`);
   const requestedProfile = req.securityProfile as string | undefined;
   const securityProfile: SecurityProfile = requestedProfile === 'strict' ? 'strict' : 'baseline';
@@ -398,12 +406,14 @@ function skillMarkdown(id: string, purpose: string): string {
 export function generateArtifacts(blueprint: Blueprint): GenerateResult {
   const blueprintProblems = validateBlueprint(blueprint);
   if (blueprintProblems.length) return { supported: false, reason: blueprintProblems.join('; '), files: [] };
-  if (blueprint.target !== 'codex' && blueprint.target !== 'claude-code') return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
+  if (!['codex', 'claude-code', 'gemini-cli'].includes(blueprint.target)) return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
   const securityProblems = validateSecurityRequirements(blueprint.security);
   if (securityProblems.length) return { supported: false, reason: securityProblems.join('; '), files: [] };
   const targetFiles = blueprint.target === 'claude-code'
     ? renderClaudeArtifacts(blueprint)
-    : (() => {
+    : blueprint.target === 'gemini-cli'
+      ? renderGeminiArtifacts(blueprint)
+      : (() => {
       const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: skillMarkdown(s.id, s.purpose) }));
       const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
       return [
@@ -461,6 +471,19 @@ export function validateArtifacts(result: GenerateResult): string[] {
       const filename = f.path.split('/').at(-1)?.replace(/\.md$/, '');
       if (!name || !description || !tools || name !== filename || !/^Read, Glob, Grep$/.test(tools)) {
         problems.push(`Invalid Claude Code custom agent: ${f.path}`);
+      }
+    }
+    if (/^\.gemini\/agents\/[^/]+\.md$/.test(f.path)) {
+      const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(f.content)?.[1] ?? '';
+      const name = /^name:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const description = /^description:\s*(.+)$/m.exec(frontmatter)?.[1]?.trim();
+      const kind = /^kind:\s*([^\n]+)$/m.exec(frontmatter)?.[1]?.trim();
+      const toolLines = /^tools:\n((?:\s+-\s+[^\n]+\n?)+)/m.exec(frontmatter)?.[1] ?? '';
+      const tools = [...toolLines.matchAll(/^\s+-\s+([^\n]+)$/gm)].map(match => match[1]?.trim());
+      const filename = f.path.split('/').at(-1)?.replace(/\.md$/, '');
+      if (!name || !description || kind !== 'local' || name !== filename
+        || tools.join(',') !== 'read_file,grep_search') {
+        problems.push(`Invalid Gemini CLI custom agent: ${f.path}`);
       }
     }
     if (f.path === 'UAA-MANIFEST.json') {
@@ -526,7 +549,7 @@ function outputConflictCategory(path: string): OutputConflictCategory {
       ? 'skill'
       : /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(path)
         ? 'codex-setting'
-        : /^\.claude\/agents\/[^/]+\.md$/i.test(path)
+        : /^(?:\.claude|\.gemini)\/agents\/[^/]+\.md$/i.test(path)
           ? 'target-agent'
           : 'project-file';
 }
