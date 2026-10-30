@@ -16,4 +16,4 @@ Create these as separate GitHub issues after the repository is published. Each i
 
 ## P2
 9. **stdio MCP server** — Read-only list_capabilities/analyze_project/propose_blueprint with redacted responses. Acceptance: local MCP inspector test and data-flow threat checks.
-10. **Per-service adapters** — Claude Code, Gemini CLI, Antigravity, ChatGPT as independent verified issues. Acceptance: no unsupported feature claims.
+10. **Per-service adapters** — Claude Code, Gemini CLI, Antigravity, ChatGPT as independent verified issues. Acceptance: no unsupported feature claims. **Implemented at format level; runtime behavior remains separately unverified.**

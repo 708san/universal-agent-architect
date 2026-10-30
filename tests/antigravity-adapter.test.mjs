@@ -42,7 +42,7 @@ test('Antigravity adapter renders documented workspace files without runtime cla
   assert.equal(fixture.runtimeEvidence, 'not-tested');
 });
 
-test('Antigravity adapter rejects malformed subagent output and unsupported targets', () => {
+test('Antigravity adapter rejects malformed subagent output', () => {
   const facts = analyzeProject({ paths: [] });
   const blueprint = proposeBlueprint(facts, { target: 'antigravity', workType: 'coding', independentWorkstreams: 2 });
   const result = generateArtifacts(blueprint);
@@ -54,8 +54,4 @@ test('Antigravity adapter rejects malformed subagent output and unsupported targ
   };
   assert.ok(validateArtifacts(malformed).some(problem => problem.includes('Antigravity custom agent')));
 
-  const unsupported = generateArtifacts(proposeBlueprint(facts, { target: 'chatgpt', workType: 'coding' }));
-  assert.equal(unsupported.supported, false);
-  assert.match(unsupported.reason, /not yet implemented/);
-  assert.deepEqual(unsupported.files, []);
 });
