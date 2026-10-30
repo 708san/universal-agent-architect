@@ -1,8 +1,8 @@
 {
   "target": "codex",
-  "checked_at": "2026-10-29",
+  "checked_at": "2026-10-30",
   "registry_version": "0.1",
   "renderer_status": "partial",
   "verification_status": "prototype_only",
-  "notes": "Do not treat existence of a target file as evidence of validated feature support. See docs/COMPATIBILITY.md."
+  "notes": "Project instructions, Skills and custom-agent TOML are rendered and validated at format level. Runtime loading, permission enforcement and MCP behavior remain unverified. See docs/COMPATIBILITY.md."
 }

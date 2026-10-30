@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-ast-assets.mjs",
     "test": "npm run build && node --test tests/*.test.mjs",
-    "check": "npm run test && node scripts/check-skills.mjs && node scripts/check-capability-registry.mjs",
+    "check": "npm run test && node scripts/check-skills.mjs && node scripts/check-capability-registry.mjs && node scripts/check-target-snapshots.mjs",
     "plan": "node scripts/cli.mjs",
     "mcp": "node scripts/mcp-server.mjs",
     "serve": "node scripts/serve.mjs"
