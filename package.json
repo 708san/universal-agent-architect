@@ -11,6 +11,13 @@
     "plan": "node scripts/cli.mjs",
     "serve": "node scripts/serve.mjs"
   },
-  "devDependencies": { "typescript": "5.8.3" },
-  "engines": { "node": ">=22" }
+  "devDependencies": {
+    "tree-sitter-python": "0.25.0",
+    "tree-sitter-typescript": "0.23.2",
+    "typescript": "5.8.3",
+    "web-tree-sitter": "0.27.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }

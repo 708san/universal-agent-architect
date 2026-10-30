@@ -14,6 +14,9 @@ Assets: source, research data, credentials, local paths, agent/MCP definitions, 
 - Offline-first. No telemetry, automatic uploads, hidden HTTP calls, or remote model calls.
 - Ignore `.env*`, `.git`, `.ssh`, private keys, `node_modules`, virtual environments and symlinks; reject absolute/traversal paths.
 - Read only allowlisted, size-bounded manifests for first-stage detection. Do not parse arbitrary user code unless explicitly authorized in later phases.
+- The explicit CLI `--ast` mode is bounded to selected Python/TypeScript files, emits structural facts
+  only, uses local parser WASM assets and rejects HTTP(S) parser assets; it never executes source or
+  returns an AST/source dump.
 - No existing-file overwrite. Stage; preview diff; require explicit confirmation before future apply support.
 - No third-party MCP server auto-start or execution of imported skills.
 - Never claim regex-based redaction proves there are no secrets. Prefer sharing typed metadata instead of raw inputs.

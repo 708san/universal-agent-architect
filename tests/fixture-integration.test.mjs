@@ -35,3 +35,13 @@ test('CLI exposes the strict security profile', () => {
   assert.equal(output.blueprint.security.profile, 'strict');
   assert.ok(output.blueprint.security.securityTests.includes('mcp-redaction'));
 });
+
+test('CLI AST mode returns bounded structural facts without source contents', () => {
+  const cli = path.join(root, 'scripts/cli.mjs');
+  const sample = path.join(root, 'examples/sample-python');
+  const run = spawnSync(process.execPath, [cli, 'analyze', sample, 'codex', 'baseline', '--ast'], { cwd: root, encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  const output = JSON.parse(run.stdout);
+  assert.ok(output.ast.files.some(file => file.path === 'src/app.py' && file.language === 'python' && file.syntax === 'ok'));
+  assert.ok(!run.stdout.includes('return a + b'));
+});
