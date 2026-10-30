@@ -38,7 +38,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 **Exit:** safe coding-project analysis; reproducible, verified Codex files; no AI required.
 
 ## P2 — Local integration
-- [ ] CLI application/rollback with staging, diff and explicit consent.
+- [x] CLI application/rollback with staging, diff and explicit consent.
 - [ ] Local MCP stdio with read-only operations first; test data minimization and injected text threats.
 - [ ] Target adapters for Claude Code, Gemini CLI, Antigravity, ChatGPT (each staged and verified separately).
 - [ ] MCP discovery from configuration only (no auto-start of arbitrary third-party servers).

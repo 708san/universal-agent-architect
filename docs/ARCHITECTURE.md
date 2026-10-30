@@ -14,6 +14,10 @@ CLI (Node filesystem)       Browser (File API)
                       generated artifacts (staging)
 ```
 
+The CLI keeps generation in `generated/` staging. `apply` previews a bounded plan by default and only
+mutates a user project with an explicit `--confirm`; `rollback` uses the operation-local backup record
+and also requires confirmation.
+
 The browser prototype also supports bounded, local-only ZIP import/export through a dependency-free
 store-only ZIP helper. Unsupported compression, traversal, symlink entries, malformed headers and
 resource-limit violations are rejected before files reach the metadata analyzer.
@@ -75,6 +79,8 @@ A future `scanProject()` belongs outside core because it accesses the filesystem
 - Dry-run reports source-project conflicts separately from staging collisions and emits only `add` or
   `replace` changes. Explicit config review may parse bounded recognized files for structural status,
   but never returns their contents or applies changes.
+- Apply accepts only a validated manifest under `generated/`, rejects symlinked staging/project paths,
+  writes through temporary files, and records replacements for scoped rollback.
 - Avoid hardcoded model versions and undocumented service-specific keys.
 
 ## Task pack contract (planned)

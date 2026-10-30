@@ -16,6 +16,9 @@ node scripts/cli.mjs analyze ./examples/sample-python codex baseline --ast
 node scripts/cli.mjs analyze ./examples/sample-python codex baseline --config
 node scripts/cli.mjs generate ./examples/sample-python codex baseline --dry-run
 node scripts/cli.mjs generate ./examples/sample-python codex
+node scripts/cli.mjs apply ./examples/sample-python --staging=generated/sample-python --confirm
+# rollback-idはapplyのJSON結果から取得する
+node scripts/cli.mjs rollback ./examples/sample-python --staging=generated/sample-python --rollback-id=<id> --confirm
 npm run serve
 ```
 
