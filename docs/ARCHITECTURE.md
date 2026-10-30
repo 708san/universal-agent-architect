@@ -34,6 +34,10 @@ The Gemini CLI adapter renders only documented project `GEMINI.md`, `.gemini/ski
 optional read-only `.gemini/agents/*.md` files. Runtime loading, permissions, hooks, extensions and
 MCP behavior remain unverified and are recorded as partial compatibility evidence.
 
+The Antigravity adapter renders only documented workspace `AGENTS.md`, `.agents/skills/**/SKILL.md`
+and optional `.agents/agents/*.md` files. Runtime loading, permissions, hooks, plugins, workflows and
+MCP behavior remain unverified and are recorded as partial compatibility evidence.
+
 The browser prototype also supports bounded, local-only ZIP import/export through a dependency-free
 store-only ZIP helper. Unsupported compression, traversal, symlink entries, malformed headers and
 resource-limit violations are rejected before files reach the metadata analyzer.
