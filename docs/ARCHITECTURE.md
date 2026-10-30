@@ -14,6 +14,10 @@ CLI (Node filesystem)       Browser (File API)
                       generated artifacts (staging)
 ```
 
+The browser prototype also supports bounded, local-only ZIP import/export through a dependency-free
+store-only ZIP helper. Unsupported compression, traversal, symlink entries, malformed headers and
+resource-limit violations are rejected before files reach the metadata analyzer.
+
 Core receives only `paths` and known allowlisted manifest strings, not path handles or network clients. It must never import Node filesystem APIs, HTTP libraries, cloud SDKs or subprocess modules. This supports reuse between browser and local CLI and is testable offline.
 
 ## Future modular architecture

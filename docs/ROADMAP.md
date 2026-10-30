@@ -26,6 +26,9 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
   - [x] Official format fixtures and fail-closed validators for AGENTS.md, Agent Skills and custom-agent TOML.
   - [ ] Runtime loading and MCP behavior remain unverified.
 - [ ] Browser ZIP import/export; safe directory selection fallback; static Pages deploy only after CSP/security tests.
+  - [x] Bounded offline store-only ZIP import/export with traversal, symlink and resource-limit checks.
+  - [x] Static browser boundary and CSP tests.
+  - [ ] Directory-selection fallback and static Pages deployment remain unimplemented.
 
 **Exit:** safe coding-project analysis; reproducible, verified Codex files; no AI required.
 

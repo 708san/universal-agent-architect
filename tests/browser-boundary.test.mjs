@@ -42,6 +42,7 @@ test('static browser boundary is local-only and allowlisted', async () => {
 
   assert.equal((await fetch(`${base}/dist/core.js`)).status, 200);
   assert.equal((await fetch(`${base}/web/browser-input.mjs`)).status, 200);
+  assert.equal((await fetch(`${base}/web/browser-zip.mjs`)).status, 200);
   assert.equal((await fetch(`${base}/package.json`)).status, 404);
   assert.equal((await fetch(`${base}/%2e%2e/.env`)).status, 404);
   assert.equal((await fetch(`${base}/`, { method: 'POST' })).status, 405);

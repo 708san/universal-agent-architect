@@ -12,7 +12,7 @@ createServer(async (req, res) => {
   catch { res.writeHead(400).end(); return; }
   const file = path.resolve(root, `.${pathname === '/' ? '/web/index.html' : pathname}`);
   if (file !== root && !file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
-  if (!['/web/index.html', '/web/browser-input.mjs', '/dist/core.js'].includes(pathname === '/' ? '/web/index.html' : pathname)) { res.writeHead(404).end(); return; }
+  if (!['/web/index.html', '/web/browser-input.mjs', '/web/browser-zip.mjs', '/dist/core.js'].includes(pathname === '/' ? '/web/index.html' : pathname)) { res.writeHead(404).end(); return; }
   try {
     const content = await readFile(file);
     res.writeHead(200, {
