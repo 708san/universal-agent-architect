@@ -22,6 +22,10 @@ Assets: source, research data, credentials, local paths, agent/MCP definitions, 
 - Existing Codex config review is opt-in for `analyze --config` and automatic for `generate --dry-run`;
   it validates bounded recognized files but returns only path, kind and status, never instructions or
   configuration values.
+- The local MCP stdio server fixes the authorized project at startup, exposes only read-only tools,
+  rejects path-bearing tool arguments through schemas, does not execute project commands or discover
+  other MCP servers, and returns redacted summaries. stdout is reserved for JSON-RPC; diagnostics go
+  to stderr.
 - Generation never overwrites existing files. Apply is a separate explicit operation: preview first,
   require `--confirm`, reject symlink escapes, and retain a scoped rollback record for replacements.
 - No third-party MCP server auto-start or execution of imported skills.

@@ -9,6 +9,7 @@
     "test": "npm run build && node --test tests/*.test.mjs",
     "check": "npm run test && node scripts/check-skills.mjs && node scripts/check-capability-registry.mjs",
     "plan": "node scripts/cli.mjs",
+    "mcp": "node scripts/mcp-server.mjs",
     "serve": "node scripts/serve.mjs"
   },
   "devDependencies": {
@@ -19,5 +20,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0"
   }
 }

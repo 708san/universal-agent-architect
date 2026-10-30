@@ -25,12 +25,23 @@ permission inheritance or actual Skill execution. The target therefore remains *
 
 The table is planning guidance, **not a promise of equivalence**. A feature is "verified" only after fixture tests against official documented formats. Remote MCP requires connectivity and might expose returned information to cloud AI.
 
+## UAA local MCP evidence
+
+The repository includes a separate local read-only MCP stdio adapter using
+`@modelcontextprotocol/server@2.4.0` (Apache-2.0), aligned with the MCP `2026-07-28` specification
+and official `serveStdio` guidance. Its fixture verifies protocol startup, tool listing, schema
+rejection, stdout purity and redacted project summaries. This verifies the UAA server boundary only;
+it does not verify Codex's native MCP discovery or permission behavior.
+
 ## Primary official sources
 - Codex instructions: https://learn.chatgpt.com/docs/agent-configuration/agents-md
 - Codex subagents: https://learn.chatgpt.com/docs/agent-configuration/subagents
 - Agent Skills spec: https://agentskills.io/specification
 - Codex skills overview: https://learn.chatgpt.com/docs/build-skills
 - MCP TypeScript SDK (v1): https://ts.sdk.modelcontextprotocol.io/server
+- MCP TypeScript SDK (v2): https://ts.sdk.modelcontextprotocol.io/v2/
+- MCP stdio serving: https://ts.sdk.modelcontextprotocol.io/v2/serving/stdio
+- MCP `2026-07-28` release: https://blog.modelcontextprotocol.io/posts/2026-07-28/
 - OpenAI Docs MCP (opt-in): https://developers.openai.com/learn/docs-mcp
 - ChatGPT plugins/MCP: https://developers.openai.com/plugins/quickstart
 
