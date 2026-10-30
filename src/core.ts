@@ -2,6 +2,7 @@
 import { CLAUDE_CODE_SOURCE_URLS, renderClaudeArtifacts } from './claude-adapter.js';
 import { GEMINI_CLI_SOURCE_URLS, renderGeminiArtifacts } from './gemini-adapter.js';
 import { ANTIGRAVITY_SOURCE_URLS, renderAntigravityArtifacts } from './antigravity-adapter.js';
+import { CHATGPT_SOURCE_URLS, renderChatgptArtifacts } from './chatgpt-adapter.js';
 
 export type Target = 'codex' | 'claude-code' | 'gemini-cli' | 'antigravity' | 'chatgpt';
 export type WorkType = 'coding';
@@ -151,8 +152,8 @@ function createSecurityRequirements(profile: SecurityProfile): SecurityRequireme
 }
 
 function createBlueprintProvenance(target: Target): BlueprintProvenance {
-  const targetEdition = target === 'codex' ? 'CLI/IDE' : target === 'antigravity' ? 'App/CLI/IDE' : ['claude-code', 'gemini-cli'].includes(target) ? 'CLI' : 'unknown';
-  const verificationStatus: VerificationStatus = ['codex', 'claude-code', 'gemini-cli', 'antigravity'].includes(target) ? 'partial' : 'planned';
+  const targetEdition = target === 'codex' ? 'CLI/IDE' : target === 'antigravity' ? 'App/CLI/IDE' : ['claude-code', 'gemini-cli'].includes(target) ? 'CLI' : target === 'chatgpt' ? 'browser/plugin' : 'unknown';
+  const verificationStatus: VerificationStatus = ['codex', 'claude-code', 'gemini-cli', 'antigravity', 'chatgpt'].includes(target) ? 'partial' : 'planned';
   return {
     registryVersion: '0.1',
     targetEdition,
@@ -166,7 +167,9 @@ function createBlueprintProvenance(target: Target): BlueprintProvenance {
           ? [...GEMINI_CLI_SOURCE_URLS]
           : target === 'antigravity'
             ? [...ANTIGRAVITY_SOURCE_URLS]
-          : [],
+            : target === 'chatgpt'
+              ? [...CHATGPT_SOURCE_URLS]
+              : [],
   };
 }
 
@@ -380,6 +383,7 @@ export function proposeBlueprint(facts: ProjectFacts, req: DesignRequest): Bluep
   if (req.target === 'claude-code') warnings.push('Claude Code rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
   else if (req.target === 'gemini-cli') warnings.push('Gemini CLI rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
   else if (req.target === 'antigravity') warnings.push('Antigravity rendering is format-level verified; runtime loading and permission enforcement remain unverified.');
+  else if (req.target === 'chatgpt') warnings.push('ChatGPT rendering is limited to a portable plugin manifest and Skills; project instructions, subagents, MCP and runtime installation remain unverified.');
   else if (req.target !== 'codex') warnings.push(`Rendering for ${req.target} is planned, not implemented in the prototype.`);
   const requestedProfile = req.securityProfile as string | undefined;
   const securityProfile: SecurityProfile = requestedProfile === 'strict' ? 'strict' : 'baseline';
@@ -410,7 +414,7 @@ function skillMarkdown(id: string, purpose: string): string {
 export function generateArtifacts(blueprint: Blueprint): GenerateResult {
   const blueprintProblems = validateBlueprint(blueprint);
   if (blueprintProblems.length) return { supported: false, reason: blueprintProblems.join('; '), files: [] };
-  if (!['codex', 'claude-code', 'gemini-cli', 'antigravity'].includes(blueprint.target)) return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
+  if (!['codex', 'claude-code', 'gemini-cli', 'antigravity', 'chatgpt'].includes(blueprint.target)) return { supported: false, reason: `${blueprint.target} adapter not yet implemented`, files: [] };
   const securityProblems = validateSecurityRequirements(blueprint.security);
   if (securityProblems.length) return { supported: false, reason: securityProblems.join('; '), files: [] };
   const targetFiles = blueprint.target === 'claude-code'
@@ -419,6 +423,8 @@ export function generateArtifacts(blueprint: Blueprint): GenerateResult {
       ? renderGeminiArtifacts(blueprint)
       : blueprint.target === 'antigravity'
         ? renderAntigravityArtifacts(blueprint)
+        : blueprint.target === 'chatgpt'
+          ? renderChatgptArtifacts(blueprint)
         : (() => {
       const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: skillMarkdown(s.id, s.purpose) }));
       const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
@@ -459,6 +465,17 @@ export function validateArtifacts(result: GenerateResult): string[] {
       const description = match?.[2];
       if (!isSkillName(skillName) || skillName !== f.path.split('/').at(-2)
         || !description || description.length > 1024) problems.push(`Invalid skill: ${f.path}`);
+    }
+    if (f.path === 'plugin.json') {
+      try {
+        const plugin = JSON.parse(f.content) as Record<string, unknown>;
+        if (plugin.$schema !== 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json'
+          || plugin.name !== 'uaa-generated-agent'
+          || plugin.version !== '0.1.0'
+          || plugin.description !== 'Rule-based project workflow generated by Universal Agent Architect.') {
+          problems.push('Invalid portable Agent Plugin manifest.');
+        }
+      } catch { problems.push('Invalid portable Agent Plugin manifest JSON.'); }
     }
     if (/^\.codex\/agents\/[^/]+\.toml$/.test(f.path)) {
       const name = /^name\s*=\s*"([^"]+)"\s*$/m.exec(f.content)?.[1];
@@ -517,6 +534,10 @@ export function validateArtifacts(result: GenerateResult): string[] {
   if (!manifest) {
     problems.push('Invalid generation manifest: missing manifest.');
     return problems;
+  }
+  if (result.files.some(file => file.path === 'plugin.json')) {
+    const skillFiles = result.files.filter(file => /^skills\/[^/]+\/SKILL\.md$/.test(file.path));
+    if (skillFiles.length === 0) problems.push('Portable Agent Plugin must include at least one root skill.');
   }
   const validSourceUrls = Array.isArray(manifest.sourceUrls)
     && new Set(manifest.sourceUrls).size === manifest.sourceUrls.length

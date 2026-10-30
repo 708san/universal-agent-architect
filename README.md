@@ -2,7 +2,7 @@
 
 **目的・プロジェクト構造・AIサービスに合わせて、エージェント構成・スキル・設定を提案・生成する、ローカル優先のオープンな設計基盤。**
 
-> **開発状況：v0.1試作段階。** 現在動作するのは「安全なファイル一覧と限定的なマニフェスト解析（明示時はPython/TypeScriptのローカルAST構造解析） → ルールベースの構成案 → 検証済み範囲のCodex/Claude Code/Gemini CLI/Antigravityファイルを別フォルダへ生成」です。Claude Code、Gemini CLI、Antigravityは形式レベルのみ検証済みで、ランタイムの読み込み・権限・MCP動作は未検証です。AI、クラウドサービスへの送信は行いません。
+> **開発状況：v0.1試作段階。** 現在動作するのは「安全なファイル一覧と限定的なマニフェスト解析（明示時はPython/TypeScriptのローカルAST構造解析） → ルールベースの構成案 → 検証済み範囲のCodex/Claude Code/Gemini CLI/Antigravity/ChatGPT Portable Pluginファイルを別フォルダへ生成」です。各アダプターは形式レベルのみ検証済みで、ランタイムの読み込み・権限・MCP動作は未検証です。AI、クラウドサービスへの送信は行いません。
 
 ## 開発用の起動
 
@@ -20,6 +20,7 @@ node scripts/cli.mjs generate ./examples/sample-python codex
 node scripts/cli.mjs generate ./examples/sample-python claude-code baseline --dry-run
 node scripts/cli.mjs generate ./examples/sample-python gemini-cli baseline --dry-run
 node scripts/cli.mjs generate ./examples/sample-python antigravity baseline --dry-run
+node scripts/cli.mjs generate ./examples/sample-python chatgpt baseline --dry-run
 node scripts/cli.mjs apply ./examples/sample-python --staging=generated/sample-python --confirm
 # rollback-idはapplyのJSON結果から取得する
 node scripts/cli.mjs rollback ./examples/sample-python --staging=generated/sample-python --rollback-id=<id> --confirm

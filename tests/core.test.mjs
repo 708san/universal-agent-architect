@@ -167,9 +167,9 @@ test('generation manifest validation fails closed for unsafe or inconsistent met
   assert.ok(validateArtifacts(withManifest({ verificationStatus: 'verified-but-unknown' })).some(problem => problem.includes('manifest')));
 });
 
-test('unimplemented provider fails clearly instead of creating invalid files', () => {
+test('invalid target fails clearly instead of creating invalid files', () => {
   const f=analyzeProject({paths:[]});
-  const result=generateArtifacts(proposeBlueprint(f,{target:'chatgpt',workType:'coding'}));
+  const result=generateArtifacts({ ...proposeBlueprint(f,{target:'codex',workType:'coding'}), target: 'unsupported-target' });
   assert.equal(result.supported,false);
   assert.equal(result.files.length,0);
 });

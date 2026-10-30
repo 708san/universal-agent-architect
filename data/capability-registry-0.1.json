@@ -86,19 +86,21 @@
       "target": "chatgpt",
       "edition": "browser/plugin",
       "version": "unknown",
-      "checkedAt": "2026-10-29",
-      "status": "planned",
+      "checkedAt": "2026-10-30",
+      "status": "partial",
       "sourceUrls": [
+        "https://developers.openai.com/plugins/build/plugins",
+        "https://developers.openai.com/plugins/deploy/submission-errors",
         "https://developers.openai.com/plugins/quickstart"
       ],
       "capabilities": {
         "instructions": "unknown",
-        "skills": "unknown",
+        "skills": "partial",
         "subagents": "unsupported",
-        "mcp": "unknown"
+        "mcp": "partial"
       },
-      "fixtureIds": [],
-      "notes": "Browser/plugin capabilities depend on product and plan; do not assume Codex agent equivalence."
+      "fixtureIds": ["tests/fixtures/chatgpt-plugin-0.1.json", "tests/chatgpt-adapter.test.mjs"],
+      "notes": "Renderer and validators cover the documented portable plugin manifest and root Skills only. Project instruction files, subagents, MCP endpoints/auth, ChatGPT installation and runtime permission behavior are not generated or verified."
     }
   ]
 }

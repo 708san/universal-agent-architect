@@ -21,7 +21,7 @@ permission inheritance or actual Skill execution. The target therefore remains *
 | Claude Code | `CLAUDE.md` | `.claude/skills/<name>/SKILL.md` | `.claude/agents/<name>.md` | supported but not rendered | **Partial** (format-level renderer; runtime unverified) |
 | Gemini CLI | `GEMINI.md` | `.gemini/skills/<name>/SKILL.md` | `.gemini/agents/<name>.md` | documented but not rendered | **Partial** (format-level renderer; runtime unverified) |
 | Antigravity | `AGENTS.md` / `GEMINI.md` / `.agents/rules/` | `.agents/skills/<name>/SKILL.md` | `.agents/agents/<name>.md` | documented but not rendered | **Partial** (format-level renderer; runtime unverified) |
-| ChatGPT browser/plugin | depends on product/plan | supported in eligible contexts | do not assume Codex agents | remote MCP/plugin | **No** |
+| ChatGPT browser/plugin | no local project file claimed | portable `plugin.json` + root `skills/` | unsupported/not assumed | supported by documented plugin/MCP formats but not rendered | **Partial** (manifest/Skills only; runtime unverified) |
 
 The table is planning guidance, **not a promise of equivalence**. A feature is "verified" only after fixture tests against official documented formats. Remote MCP requires connectivity and might expose returned information to cloud AI.
 
@@ -43,6 +43,7 @@ it does not verify Codex's native MCP discovery or permission behavior.
 - MCP stdio serving: https://ts.sdk.modelcontextprotocol.io/v2/serving/stdio
 - MCP `2026-07-28` release: https://blog.modelcontextprotocol.io/posts/2026-07-28/
 - OpenAI plugin MCP manifest: https://developers.openai.com/plugins/deploy/submission-errors
+- OpenAI portable plugin package: https://developers.openai.com/plugins/build/plugins
 - Gemini CLI MCP configuration: https://geminicli.com/docs/tools/mcp-server/
 - OpenAI Docs MCP (opt-in): https://developers.openai.com/learn/docs-mcp
 - ChatGPT plugins/MCP: https://developers.openai.com/plugins/quickstart

@@ -39,7 +39,7 @@ test('Claude Code adapter renders documented project files without runtime claim
   assert.equal(fixture.runtimeEvidence, 'not-tested');
 });
 
-test('Claude Code adapter rejects malformed subagent output and unsupported targets', () => {
+test('Claude Code adapter rejects malformed subagent output', () => {
   const facts = analyzeProject({ paths: [] });
   const blueprint = proposeBlueprint(facts, { target: 'claude-code', workType: 'coding', independentWorkstreams: 2 });
   const result = generateArtifacts(blueprint);
@@ -51,8 +51,4 @@ test('Claude Code adapter rejects malformed subagent output and unsupported targ
   };
   assert.ok(validateArtifacts(malformed).some(problem => problem.includes('Claude Code custom agent')));
 
-  const unsupported = generateArtifacts(proposeBlueprint(facts, { target: 'chatgpt', workType: 'coding' }));
-  assert.equal(unsupported.supported, false);
-  assert.match(unsupported.reason, /not yet implemented/);
-  assert.deepEqual(unsupported.files, []);
 });

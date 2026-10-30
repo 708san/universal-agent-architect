@@ -1,8 +1,8 @@
 {
   "target": "chatgpt",
-  "checked_at": "2026-10-29",
+  "checked_at": "2026-10-30",
   "registry_version": "0.1",
-  "renderer_status": "not_implemented",
+  "renderer_status": "partial",
   "verification_status": "prototype_only",
-  "notes": "Do not treat existence of a target file as evidence of validated feature support. See docs/COMPATIBILITY.md."
+  "notes": "Portable plugin manifest and root Skills are rendered and validated at format level. Project instructions, subagents, MCP/auth, ChatGPT installation and runtime behavior remain unverified. See docs/COMPATIBILITY.md."
 }

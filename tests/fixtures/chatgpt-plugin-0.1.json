@@ -1,0 +1,9 @@
+{
+  "target": "chatgpt",
+  "format": "portable-agent-plugin",
+  "manifest": "plugin.json",
+  "skillRoot": "skills",
+  "schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "runtimeEvidence": "not-tested",
+  "unsupportedGeneratedFeatures": ["project-instructions", "subagents", "mcpServers", "\"auth\"", "extensions.com.openai"]
+}
