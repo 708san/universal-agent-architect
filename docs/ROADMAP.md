@@ -16,9 +16,10 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [x] Formal schema and versioned fixtures for Blueprint and capability registry.
   - [x] Initial Blueprint 0.1 schema and production-readiness gate document.
   - [x] Deterministic generation provenance manifest schema and output.
-- [ ] Parser for existing Codex configuration + conflicts + dry-run diffs.
+- [x] Parser for existing Codex configuration + conflicts + dry-run diffs.
   - [x] Basic metadata inventory and no-write output collision preview.
   - [x] Source-project conflict categories are reported separately in dry-run output.
+  - [x] Bounded status parser for recognized instructions, Skills and Codex settings with add/replace dry-run changes.
 - [ ] Robust project analysis (AST via Tree-sitter WASM), bounded file budget and OS-specific safe file traversal.
   - [x] Bounded Tree-sitter WASM evaluation plan with dependency, bundle-size and security gates.
   - [x] CLI-first bounded Python/TypeScript structural analyzer with local pinned WASM assets.

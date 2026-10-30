@@ -49,6 +49,7 @@ capability-registry <--- official docs updater + human-reviewed fixtures
 - `generateArtifacts(Blueprint): GenerateResult`
 - `validateArtifacts(GenerateResult): string[]`
 - `findOutputConflicts(existingPaths, artifacts): OutputConflict[]`
+- `findOutputChanges(existingPaths, artifacts): OutputChange[]`
 - `safeRelativePath(string): string | null`
 
 The canonical `Blueprint` shape is versioned in
@@ -71,8 +72,9 @@ A future `scanProject()` belongs outside core because it accesses the filesystem
 ## Adapter contract (planned)
 - Target id and metadata source/version; capability checks; `render(blueprint) -> artifacts` pure; `validate(artifacts) -> findings`; fixtures; unsupported feature reporting.
 - Output paths always relative to an approved staging root; reject traversal, absolute paths and duplicates.
-- Dry-run reports source-project conflicts separately from staging collisions; it never reads existing
-  instruction contents or applies changes.
+- Dry-run reports source-project conflicts separately from staging collisions and emits only `add` or
+  `replace` changes. Explicit config review may parse bounded recognized files for structural status,
+  but never returns their contents or applies changes.
 - Avoid hardcoded model versions and undocumented service-specific keys.
 
 ## Task pack contract (planned)

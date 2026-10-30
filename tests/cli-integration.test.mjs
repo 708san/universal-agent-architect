@@ -84,3 +84,28 @@ test('CLI dry-run reports output collisions without writing', async () => {
     assert.deepEqual((await readdir(generated)).sort(), ['AGENTS.md']);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test('CLI config review reports safe statuses and dry-run changes without source content', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'uaa-'));
+  const project = path.join(root, 'project');
+  try {
+    await mkdir(path.join(project, '.agents', 'skills', 'review'), { recursive: true });
+    await mkdir(path.join(project, '.codex', 'agents'), { recursive: true });
+    await writeFile(path.join(project, '.agents', 'skills', 'review', 'SKILL.md'), '---\nname: review\ndescription: Review changes.\n---\nsecret skill instructions');
+    await writeFile(path.join(project, '.codex', 'agents', 'reviewer.toml'), 'name = "wrong"\ndescription = "do-not-report"\n');
+    await writeFile(path.join(project, 'AGENTS.md'), 'do-not-report instruction');
+    const analyze = spawnSync(process.execPath, [cli, 'analyze', project, 'codex', 'baseline', '--config'], { cwd: root, encoding: 'utf8' });
+    assert.equal(analyze.status, 0, analyze.stderr);
+    const analyzed = JSON.parse(analyze.stdout);
+    assert.ok(analyzed.existingConfig.findings.some(finding => finding.status === 'valid'));
+    assert.ok(analyzed.existingConfig.findings.some(finding => finding.status === 'malformed'));
+    assert.ok(!analyze.stdout.includes('do-not-report'));
+
+    const dryRun = spawnSync(process.execPath, [cli, 'generate', project, 'codex', 'baseline', '--dry-run'], { cwd: root, encoding: 'utf8' });
+    assert.equal(dryRun.status, 0, dryRun.stderr);
+    const output = JSON.parse(dryRun.stdout);
+    assert.ok(output.rendering.changes.some(change => change.path === 'AGENTS.md' && change.action === 'replace'));
+    assert.ok(output.existingConfig.findings.length >= 3);
+    assert.ok(!dryRun.stdout.includes('secret skill instructions'));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

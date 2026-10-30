@@ -19,6 +19,9 @@ Assets: source, research data, credentials, local paths, agent/MCP definitions, 
   returns an AST/source dump.
 - Browser AST analysis is opt-in, reads only bounded selected files, serves parser assets from a local
   build output allowlist and runs under `connect-src 'none'`; metadata-only analysis remains the default.
+- Existing Codex config review is opt-in for `analyze --config` and automatic for `generate --dry-run`;
+  it validates bounded recognized files but returns only path, kind and status, never instructions or
+  configuration values.
 - No existing-file overwrite. Stage; preview diff; require explicit confirmation before future apply support.
 - No third-party MCP server auto-start or execution of imported skills.
 - Never claim regex-based redaction proves there are no secrets. Prefer sharing typed metadata instead of raw inputs.
