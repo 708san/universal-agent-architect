@@ -1,0 +1,10 @@
+{
+  "target": "claude-code",
+  "formats": {
+    "instructionFile": "CLAUDE.md",
+    "skillRoot": ".claude/skills",
+    "subagentRoot": ".claude/agents",
+    "subagentRequiredFields": ["name", "description", "tools"]
+  },
+  "runtimeEvidence": "not-tested"
+}
