@@ -28,7 +28,8 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [ ] Browser ZIP import/export; safe directory selection fallback; static Pages deploy only after CSP/security tests.
   - [x] Bounded offline store-only ZIP import/export with traversal, symlink and resource-limit checks.
   - [x] Static browser boundary and CSP tests.
-  - [ ] Directory-selection fallback and static Pages deployment remain unimplemented.
+  - [x] Standard multiple-file selection fallback when folder selection is unavailable.
+  - [ ] Static Pages deployment remains unimplemented.
 
 **Exit:** safe coding-project analysis; reproducible, verified Codex files; no AI required.
 

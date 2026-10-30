@@ -31,3 +31,13 @@ test('browser and CLI produce the same golden facts, Blueprint and validation re
   assert.deepEqual(validateArtifacts(browserArtifacts), []);
   assert.deepEqual(browserArtifacts, generateArtifacts(cliOutput.blueprint));
 });
+
+test('flat file selection uses safe names and allowlisted root manifests', async () => {
+  const input = await collectBrowserInput([
+    { name: 'app.py', size: 10, text: async () => 'print(1)' },
+    { name: 'requirements.txt', size: 20, text: async () => 'pytest==8\n' },
+    { name: '.env', size: 20, text: async () => 'SECRET=hidden' },
+  ]);
+  assert.deepEqual(input.paths, ['app.py', 'requirements.txt']);
+  assert.deepEqual(input.manifests, { 'requirements.txt': 'pytest==8\n' });
+});
