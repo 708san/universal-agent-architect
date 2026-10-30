@@ -4,21 +4,42 @@
 <style>body{font:16px/1.6 system-ui,sans-serif;margin:0;background:#f5f7fb;color:#1d2736}main{max-width:810px;margin:4rem auto;padding:2rem;background:white;border:1px solid #dce3ed;border-radius:16px}h1{margin-top:0}label{display:block;margin-top:1.3rem;font-weight:650}button,select,input{font:inherit;padding:.65rem}button{margin-top:1rem;background:#1957a4;color:white;border:0;border-radius:8px;cursor:pointer}pre{overflow:auto;background:#f0f3f7;padding:1rem;border-radius:8px}.note{color:#53657b;font-size:.9rem}</style></head>
 <body><main><h1>Universal Agent Architect</h1><p>初期プロトタイプ：ファイルはブラウザ内で解析します。AIや外部APIを呼び出しません。</p>
 <label for="files">解析対象のプロジェクト（フォルダ選択対応ブラウザ）</label><input id="files" type="file" webkitdirectory multiple>
+<label for="zip">または安全な非圧縮ZIPを選択</label><input id="zip" type="file" accept=".zip,application/zip">
 <label for="target">出力先</label><select id="target"><option>codex</option><option>claude-code</option><option>gemini-cli</option><option>antigravity</option><option>chatgpt</option></select>
 <label for="security">セキュリティプロファイル</label><select id="security"><option value="baseline">baseline（標準）</option><option value="strict">strict（強化）</option></select>
-<label><input id="review" type="checkbox" checked> コードレビューを追加</label><button id="run">構成を解析・提案</button>
-<p class="note">未実装の出力先は「未対応」と表示します。表示結果にファイル名そのものは含めません。</p><pre id="output" aria-live="polite">フォルダを選択してください。</pre>
+<label><input id="review" type="checkbox" checked> コードレビューを追加</label><button id="run">構成を解析・提案</button><button id="export" disabled>生成物をZIP保存</button>
+<p class="note">未実装の出力先は「未対応」と表示します。ZIPは安全性確認済みの非圧縮方式だけに対応します。</p><pre id="output" aria-live="polite">フォルダまたはZIPを選択してください。</pre>
 </main><script type="module">
 import { analyzeProject,proposeBlueprint,generateArtifacts,validateArtifacts } from '../dist/core.js';
 import { collectBrowserInput } from './browser-input.mjs';
+import { parseStoredZip, createStoredZip } from './browser-zip.mjs';
 const $=id=>document.getElementById(id);
+let lastArtifacts=[];
 $('run').addEventListener('click', async()=>{
-  const entries=[...$('files').files];
-  if(!entries.length){$('output').textContent='先にフォルダを選択してください。';return;}
-  const input=await collectBrowserInput(entries);
-  const facts=analyzeProject(input);
-  const blueprint=proposeBlueprint(facts,{target:$('target').value,workType:'coding',needsReview:$('review').checked,securityProfile:$('security').value});
-  const rendered=generateArtifacts(blueprint);
-  $('output').textContent=JSON.stringify({facts,blueprint,rendering:{supported:rendered.supported,generatedFiles:rendered.files.map(f=>f.path),problems:validateArtifacts(rendered)}},null,2);
+  try {
+    const folderEntries=[...$('files').files];
+    const zipFile=$('zip').files[0];
+    if(folderEntries.length && zipFile){$('output').textContent='フォルダとZIPのどちらか一方を選択してください。';return;}
+    if(!folderEntries.length && !zipFile){$('output').textContent='フォルダまたはZIPを選択してください。';return;}
+    const entries=folderEntries.length ? folderEntries : parseStoredZip(await zipFile.arrayBuffer()).map(entry=>({
+      webkitRelativePath:entry.path,
+      name:entry.path.split('/').at(-1),
+      size:entry.data.byteLength,
+      text:async()=>new TextDecoder().decode(entry.data),
+    }));
+    const input=await collectBrowserInput(entries);
+    const facts=analyzeProject(input);
+    const blueprint=proposeBlueprint(facts,{target:$('target').value,workType:'coding',needsReview:$('review').checked,securityProfile:$('security').value});
+    const rendered=generateArtifacts(blueprint);
+    lastArtifacts=rendered.supported ? rendered.files : [];
+    $('export').disabled=!lastArtifacts.length;
+    $('output').textContent=JSON.stringify({facts,blueprint,rendering:{supported:rendered.supported,generatedFiles:rendered.files.map(f=>f.path),problems:validateArtifacts(rendered)}},null,2);
+  } catch (error) { lastArtifacts=[]; $('export').disabled=true; $('output').textContent=error instanceof Error ? error.message : '入力を処理できませんでした。'; }
+});
+$('export').addEventListener('click',()=>{
+  if(!lastArtifacts.length)return;
+  const blob=new Blob([createStoredZip(lastArtifacts.map(file=>({path:file.path,content:file.content})))],{type:'application/zip'});
+  const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download='uaa-generated.zip'; link.click();
+  setTimeout(()=>URL.revokeObjectURL(link.href),0);
 });
 </script></body></html>
