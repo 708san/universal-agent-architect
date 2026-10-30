@@ -7,9 +7,10 @@ import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts,
 import { analyzeAstSources } from '../dist/ast-analyzer.js';
 import { inspectExistingCodexConfig } from '../dist/existing-config.js';
 import { createApplyPlan, createRollbackRecord } from '../dist/apply.js';
+import { inspectMcpConfig } from '../dist/mcp-config.js';
 
 const ignored = new Set(['node_modules', '.git', '.env', '.ssh', '.aws', '.npmrc', '.venv', 'venv', 'dist', 'coverage', 'build', '.next', 'secrets', 'private']);
-const allowedHiddenDirectories = new Set(['.github', '.codex', '.agents']);
+const allowedHiddenDirectories = new Set(['.github', '.codex', '.agents', '.gemini']);
 const manifestNames = ['package.json', 'pyproject.toml', 'requirements.txt'];
 const MAX_DEPTH = 8;
 const MAX_FILES = 5_000;
@@ -25,6 +26,7 @@ const astAssets = {
 const isConfigPath = relativePath => /(^|\/)(?:AGENTS(?:\.override)?|CLAUDE|GEMINI)\.md$/i.test(relativePath)
   || /(^|\/)(?:\.agents\/skills|skills)\/[^/]+\/SKILL\.md$/i.test(relativePath)
   || /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(relativePath);
+const isMcpConfigPath = relativePath => relativePath === '.mcp.json' || relativePath === '.gemini/settings.json' || relativePath === '.codex/config.toml';
 
 function optionValue(options, prefix) {
   return options.find(option => option.startsWith(`${prefix}=`))?.slice(prefix.length + 1);
@@ -185,16 +187,16 @@ async function rollbackStaged(projectArgument, stagingArgument, rollbackId, conf
   }
   console.log(JSON.stringify({ mode: 'rolled-back', rollbackId, changes: entries.map(entry => ({ path: entry.path, action: entry.action })) }, null, 2));
 }
-async function scan(dir, { includeAst = false, includeConfig = false } = {}) {
+async function scan(dir, { includeAst = false, includeConfig = false, includeMcpConfig = false } = {}) {
   const rootStat = await lstat(dir);
   if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) throw new Error('Expected a non-symlink directory');
   const rootReal = await realpath(dir);
-  const paths = []; const manifests = {}; const astSources = []; const configSources = []; const warnings = []; const warningSet = new Set(); let count = 0; let astBytes = 0;
+  const paths = []; const manifests = {}; const astSources = []; const configSources = []; const mcpSources = []; const warnings = []; const warningSet = new Set(); let count = 0; let astBytes = 0;
   const warn = message => { if (!warningSet.has(message)) { warningSet.add(message); warnings.push(message); } };
   const shouldSkip = entry => {
     const lower = entry.name.toLowerCase();
     return ignored.has(lower) || lower.startsWith('.env') || /\.(pem|key|p12|pfx)$/i.test(entry.name)
-      || (entry.name.startsWith('.') && !allowedHiddenDirectories.has(lower));
+      || (entry.name.startsWith('.') && lower !== '.mcp.json' && !allowedHiddenDirectories.has(lower))
   };
   const isInsideRoot = async candidate => {
     const resolved = await realpath(candidate).catch(() => null);
@@ -245,10 +247,17 @@ async function scan(dir, { includeAst = false, includeConfig = false } = {}) {
             catch { warn('Skipped an unreadable existing-config file.'); }
           }
         }
+        if (includeMcpConfig && isMcpConfigPath(r)) {
+          if (stat.size > CONFIG_MAX_FILE_BYTES) warn('Skipped an MCP config exceeding the size limit.');
+          else {
+            try { mcpSources.push({ path: r, content: await readFile(candidate, 'utf8') }); }
+            catch { warn('Skipped an unreadable MCP config.'); }
+          }
+        }
       }
     }
   }
-  await walk(); return { paths, manifests, warnings, astSources, configSources };
+  await walk(); return { paths, manifests, warnings, astSources, configSources, mcpSources };
 }
 async function main() {
   const args = process.argv.slice(2);
@@ -260,41 +269,44 @@ async function main() {
   const dryRun = options.includes('--dry-run');
   const includeAst = options.includes('--ast');
   const includeConfig = options.includes('--config') || (dryRun && command === 'generate');
+  const includeMcpConfig = options.includes('--mcp-config');
   const confirm = options.includes('--confirm');
   const stagingArgument = optionValue(options, '--staging');
   const rollbackId = optionValue(options, '--rollback-id');
   if (command !== 'analyze' && command !== 'generate') {
     if (command !== 'apply' && command !== 'rollback') {
-      console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run] [--ast] [--config]\n       node scripts/cli.mjs apply <project-dir> --staging=generated/project [--confirm]\n       node scripts/cli.mjs rollback <project-dir> --staging=generated/project --rollback-id=<id> [--confirm]');
+      console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run] [--ast] [--config] [--mcp-config]\n       node scripts/cli.mjs apply <project-dir> --staging=generated/project [--confirm]\n       node scripts/cli.mjs rollback <project-dir> --staging=generated/project --rollback-id=<id> [--confirm]');
       return;
     }
   }
-  const knownOptions = ['--dry-run', '--ast', '--config', '--confirm'];
+  const knownOptions = ['--dry-run', '--ast', '--config', '--mcp-config', '--confirm'];
   if (options.some(option => !knownOptions.includes(option) && !option.startsWith('--staging=') && !option.startsWith('--rollback-id='))) throw new Error('Unsupported CLI option.');
   if (command === 'apply') {
-    if (!stagingArgument || dryRun || includeAst || includeConfig || rollbackId) throw new Error('Apply requires only --staging and optional --confirm.');
+    if (!stagingArgument || dryRun || includeAst || includeConfig || includeMcpConfig || rollbackId) throw new Error('Apply requires only --staging and optional --confirm.');
     await applyStaged(folder, stagingArgument, confirm);
     return;
   }
   if (command === 'rollback') {
-    if (!stagingArgument || dryRun || includeAst || includeConfig) throw new Error('Rollback requires --staging and --rollback-id.');
+    if (!stagingArgument || dryRun || includeAst || includeConfig || includeMcpConfig) throw new Error('Rollback requires --staging and --rollback-id.');
     await rollbackStaged(folder, stagingArgument, rollbackId, confirm);
     return;
   }
   if (confirm || stagingArgument || rollbackId) throw new Error('Apply/rollback options are only available for apply or rollback.');
+  if (includeMcpConfig && command !== 'analyze') throw new Error('The --mcp-config option is only available for analyze.');
   if (dryRun && command !== 'generate') throw new Error('The --dry-run option is only available for generate.');
   if (includeAst && command !== 'analyze') throw new Error('The --ast option is only available for analyze.');
   if (options.includes('--config') && command !== 'analyze' && !dryRun) throw new Error('The --config option is only available for analyze or generate dry-run.');
   if (securityProfile !== 'baseline' && securityProfile !== 'strict') throw new Error('Security profile must be baseline or strict');
   const abs = path.resolve(folder);
   if (!(await lstat(abs)).isDirectory()) throw new Error('Expected a directory');
-  const input = await scan(abs, { includeAst, includeConfig });
+  const input = await scan(abs, { includeAst, includeConfig, includeMcpConfig });
   const facts = analyzeProject(input);
   const blueprint = proposeBlueprint(facts, { target, workType: 'coding', needsReview: true, securityProfile });
   if (command === 'analyze') {
     const ast = includeAst ? await analyzeAstSources(input.astSources, { assets: astAssets }) : undefined;
     const existingConfig = includeConfig ? inspectExistingCodexConfig(input.configSources) : undefined;
-    console.log(JSON.stringify({ facts, blueprint, ...(ast ? { ast } : {}), ...(existingConfig ? { existingConfig } : {}) }, null, 2));
+    const mcpConfig = includeMcpConfig ? inspectMcpConfig(input.mcpSources) : undefined;
+    console.log(JSON.stringify({ facts, blueprint, ...(ast ? { ast } : {}), ...(existingConfig ? { existingConfig } : {}), ...(mcpConfig ? { mcpConfig } : {}) }, null, 2));
     return;
   }
   const rendered = generateArtifacts(blueprint);

@@ -26,6 +26,9 @@ Assets: source, research data, credentials, local paths, agent/MCP definitions, 
   rejects path-bearing tool arguments through schemas, does not execute project commands or discover
   other MCP servers, and returns redacted summaries. stdout is reserved for JSON-RPC; diagnostics go
   to stderr.
+- MCP config discovery is structural and opt-in: only bounded recognized files are parsed, while
+  commands, URLs, arguments, headers, environment values and credential-like values remain excluded;
+  no configured server is started or contacted.
 - Generation never overwrites existing files. Apply is a separate explicit operation: preview first,
   require `--confirm`, reject symlink escapes, and retain a scoped rollback record for replacements.
 - No third-party MCP server auto-start or execution of imported skills.

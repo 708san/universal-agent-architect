@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts } from '../dist/core.js';
@@ -44,4 +46,35 @@ test('CLI AST mode returns bounded structural facts without source contents', ()
   const output = JSON.parse(run.stdout);
   assert.ok(output.ast.files.some(file => file.path === 'src/app.py' && file.language === 'python' && file.syntax === 'ok'));
   assert.ok(!run.stdout.includes('return a + b'));
+});
+
+test('CLI MCP config mode returns structural discovery without command or URL values', () => {
+  const cli = path.join(root, 'scripts/cli.mjs');
+  const sample = path.join(root, 'examples/sample-python');
+  const run = spawnSync(process.execPath, [cli, 'analyze', sample, 'codex', 'baseline', '--mcp-config'], { cwd: root, encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  const output = JSON.parse(run.stdout);
+  assert.ok(Array.isArray(output.mcpConfig.findings));
+  assert.ok(!run.stdout.includes('http://'));
+});
+
+test('CLI MCP config mode discovers recognized project files without starting declared commands', async () => {
+  const cli = path.join(root, 'scripts/cli.mjs');
+  const project = await mkdtemp(path.join(tmpdir(), 'uaa-mcp-config-'));
+  const marker = path.join(project, 'should-not-exist');
+  await writeFile(path.join(project, '.mcp.json'), JSON.stringify({ mcpServers: {
+    local_tool: { command: process.execPath, args: ['-e', `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'started')`] },
+  } }));
+  try {
+    const run = spawnSync(process.execPath, [cli, 'analyze', project, 'codex', 'baseline', '--mcp-config'], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    const output = JSON.parse(run.stdout);
+    assert.deepEqual(output.mcpConfig.findings.map(finding => [finding.configPath, finding.name, finding.transport, finding.status]), [
+      ['.mcp.json', 'local_tool', 'stdio', 'valid'],
+    ]);
+    assert.ok(!run.stdout.includes('should-not-exist'));
+    assert.throws(() => readFileSync(marker));
+  } finally {
+    await rm(project, { recursive: true, force: true });
+  }
 });

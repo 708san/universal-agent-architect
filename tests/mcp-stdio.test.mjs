@@ -60,6 +60,7 @@ test('MCP stdio exposes only bounded read-only tools and redacts project content
       assert.ok(analyzedText.includes('projectScope'));
       assert.ok(!analyzedText.includes('SECRET=do-not-return'));
       assert.ok(!analyzedText.includes('app.py'));
+      assert.ok(analyzedText.includes('mcpConfig'));
 
       const invalid = await server.request(5, 'tools/call', { name: 'propose_blueprint', arguments: { target: '/etc/passwd' } });
       assert.ok(invalid.error || invalid.result?.isError);
