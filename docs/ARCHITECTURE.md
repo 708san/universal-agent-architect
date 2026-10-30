@@ -18,11 +18,12 @@ The browser prototype also supports bounded, local-only ZIP import/export throug
 store-only ZIP helper. Unsupported compression, traversal, symlink entries, malformed headers and
 resource-limit violations are rejected before files reach the metadata analyzer.
 
-The CLI additionally supports an explicit `analyze ... --ast` mode. That adapter reads bounded local
-Python and TypeScript source files into the external `src/ast-analyzer.ts` module, which uses local
-Tree-sitter WASM assets and returns only syntax/declaration/import facts. The pure core does not load
-Tree-sitter, source contents or parser assets. Browser AST loading is not yet implemented; browser
-asset packaging and no-network verification remain a planned task.
+The CLI additionally supports an explicit `analyze ... --ast` mode. The browser prototype exposes the
+same analyzer only after an explicit AST checkbox selection. Both adapters read bounded local Python
+and TypeScript source files into the external `src/ast-analyzer.ts` module, which uses local Tree-sitter
+WASM assets and returns only syntax/declaration/import facts. The pure core does not load Tree-sitter,
+source contents or parser assets. Browser assets are copied from pinned npm packages during the local
+build and served only through an explicit static allowlist.
 
 Core receives only `paths` and known allowlisted manifest strings, not path handles or network clients. It must never import Node filesystem APIs, HTTP libraries, cloud SDKs or subprocess modules. This supports reuse between browser and local CLI and is testable offline.
 

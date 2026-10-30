@@ -8,41 +8,7 @@
 <label for="zip">または安全な非圧縮ZIPを選択</label><input id="zip" type="file" accept=".zip,application/zip">
 <label for="target">出力先</label><select id="target"><option>codex</option><option>claude-code</option><option>gemini-cli</option><option>antigravity</option><option>chatgpt</option></select>
 <label for="security">セキュリティプロファイル</label><select id="security"><option value="baseline">baseline（標準）</option><option value="strict">strict（強化）</option></select>
+<label><input id="ast" type="checkbox"> ローカルAST解析を有効化（Python/TypeScript、明示選択時のみ）</label>
 <label><input id="review" type="checkbox" checked> コードレビューを追加</label><button id="run">構成を解析・提案</button><button id="export" disabled>生成物をZIP保存</button>
-<p class="note">未実装の出力先は「未対応」と表示します。ZIPは安全性確認済みの非圧縮方式だけに対応します。個別ファイル選択では階層情報を保持できない場合があります。</p><pre id="output" aria-live="polite">フォルダ、個別ファイルまたはZIPを選択してください。</pre>
-</main><script type="module">
-import { analyzeProject,proposeBlueprint,generateArtifacts,validateArtifacts } from '../dist/core.js';
-import { collectBrowserInput } from './browser-input.mjs';
-import { parseStoredZip, createStoredZip } from './browser-zip.mjs';
-const $=id=>document.getElementById(id);
-let lastArtifacts=[];
-$('run').addEventListener('click', async()=>{
-  try {
-    const folderEntries=[...$('files').files];
-    const fallbackEntries=[...$('files-fallback').files];
-    const zipFile=$('zip').files[0];
-    const sourceCount=Number(folderEntries.length>0)+Number(fallbackEntries.length>0)+Number(Boolean(zipFile));
-    if(sourceCount>1){$('output').textContent='フォルダ、個別ファイル、ZIPのいずれか一つだけを選択してください。';return;}
-    if(sourceCount===0){$('output').textContent='フォルダ、個別ファイルまたはZIPを選択してください。';return;}
-    const entries=folderEntries.length ? folderEntries : fallbackEntries.length ? fallbackEntries : parseStoredZip(await zipFile.arrayBuffer()).map(entry=>({
-      webkitRelativePath:entry.path,
-      name:entry.path.split('/').at(-1),
-      size:entry.data.byteLength,
-      text:async()=>new TextDecoder().decode(entry.data),
-    }));
-    const input=await collectBrowserInput(entries);
-    const facts=analyzeProject(input);
-    const blueprint=proposeBlueprint(facts,{target:$('target').value,workType:'coding',needsReview:$('review').checked,securityProfile:$('security').value});
-    const rendered=generateArtifacts(blueprint);
-    lastArtifacts=rendered.supported ? rendered.files : [];
-    $('export').disabled=!lastArtifacts.length;
-    $('output').textContent=JSON.stringify({facts,blueprint,rendering:{supported:rendered.supported,generatedFiles:rendered.files.map(f=>f.path),problems:validateArtifacts(rendered)}},null,2);
-  } catch (error) { lastArtifacts=[]; $('export').disabled=true; $('output').textContent=error instanceof Error ? error.message : '入力を処理できませんでした。'; }
-});
-$('export').addEventListener('click',()=>{
-  if(!lastArtifacts.length)return;
-  const blob=new Blob([createStoredZip(lastArtifacts.map(file=>({path:file.path,content:file.content})))],{type:'application/zip'});
-  const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download='uaa-generated.zip'; link.click();
-  setTimeout(()=>URL.revokeObjectURL(link.href),0);
-});
-</script></body></html>
+<p class="note">未実装の出力先は「未対応」と表示します。ZIPは安全性確認済みの非圧縮方式だけに対応します。個別ファイル選択では階層情報を保持できない場合があります。AST解析は選択した場合だけローカルで実行し、ソース本文はレポートに含めません。</p><pre id="output" aria-live="polite">フォルダ、個別ファイルまたはZIPを選択してください。</pre>
+</main><script type="importmap">{"imports":{"web-tree-sitter":"/web/vendor/web-tree-sitter.js"}}</script><script type="module" src="/web/app.mjs"></script></body></html>

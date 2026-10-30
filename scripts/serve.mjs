@@ -12,12 +12,14 @@ createServer(async (req, res) => {
   catch { res.writeHead(400).end(); return; }
   const file = path.resolve(root, `.${pathname === '/' ? '/web/index.html' : pathname}`);
   if (file !== root && !file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
-  if (!['/web/index.html', '/web/browser-input.mjs', '/web/browser-zip.mjs', '/dist/core.js'].includes(pathname === '/' ? '/web/index.html' : pathname)) { res.writeHead(404).end(); return; }
+  const allowed = new Set(['/web/index.html', '/web/app.mjs', '/web/browser-input.mjs', '/web/browser-zip.mjs', '/dist/core.js', '/dist/ast-analyzer.js',
+    '/web/vendor/web-tree-sitter.js', '/web/vendor/web-tree-sitter.wasm', '/web/vendor/tree-sitter-python.wasm', '/web/vendor/tree-sitter-typescript.wasm']);
+  if (!allowed.has(pathname === '/' ? '/web/index.html' : pathname)) { res.writeHead(404).end(); return; }
   try {
     const content = await readFile(file);
     res.writeHead(200, {
       'content-type': mime[path.extname(file)] ?? 'application/octet-stream',
-      'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'",
+      'content-security-policy': "default-src 'none'; script-src 'self' 'sha256-TYtj7t8BjFvc8RY550tH/cFAE0l1pYZ3xHEQoEVgA4U='; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'",
       'referrer-policy': 'no-referrer',
       'x-content-type-options': 'nosniff',
     });
