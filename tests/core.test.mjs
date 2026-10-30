@@ -124,6 +124,19 @@ test('single agent default and review skill generation', () => {
   assert.match(result.files.find(f=>f.path==='.agents/skills/code-review/SKILL.md').content,/Do not access secrets/);
 });
 
+test('strict profile generates an offline security verification Skill', () => {
+  const facts = analyzeProject({ paths: ['tests/app.test.ts'] });
+  const baseline = generateArtifacts(proposeBlueprint(facts, { target: 'codex', workType: 'coding' }));
+  const strict = generateArtifacts(proposeBlueprint(facts, { target: 'codex', workType: 'coding', securityProfile: 'strict' }));
+  assert.equal(baseline.files.some(file => file.path.endsWith('/security-verification/SKILL.md')), false);
+  const securitySkill = strict.files.find(file => file.path === '.agents/skills/security-verification/SKILL.md');
+  assert.ok(securitySkill);
+  assert.match(securitySkill.content, /Do not access secrets/);
+  assert.match(securitySkill.content, /prompt injection/);
+  assert.match(securitySkill.content, /MCP redaction/);
+  assert.match(securitySkill.content, /runtime isolation/);
+});
+
 test('generation manifest validation fails closed for unsafe or inconsistent metadata', () => {
   const facts = analyzeProject({ paths: ['src/app.ts'] });
   const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });

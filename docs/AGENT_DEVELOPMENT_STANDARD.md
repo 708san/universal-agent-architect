@@ -46,6 +46,10 @@ These profiles produce requirements and test IDs. They are not a sandbox or a gu
 runtime enforces permissions. A target adapter must validate what it can enforce and mark the rest
 unsupported.
 
+For Codex strict-profile output, the generator may include an instruction-only
+`security-verification` Skill. It guides bounded local checks and evidence reporting; it does not
+execute commands, grant permissions or prove runtime isolation.
+
 ## Skill contract
 
 Follow the [Agent Skills specification](https://agentskills.io/specification):
