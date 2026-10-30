@@ -19,6 +19,7 @@ node scripts/cli.mjs generate ./examples/sample-python codex
 node scripts/cli.mjs apply ./examples/sample-python --staging=generated/sample-python --confirm
 # rollback-idはapplyのJSON結果から取得する
 node scripts/cli.mjs rollback ./examples/sample-python --staging=generated/sample-python --rollback-id=<id> --confirm
+npm run mcp -- --project=./examples/sample-python
 npm run serve
 ```
 

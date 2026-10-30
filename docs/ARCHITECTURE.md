@@ -18,6 +18,10 @@ The CLI keeps generation in `generated/` staging. `apply` previews a bounded pla
 mutates a user project with an explicit `--confirm`; `rollback` uses the operation-local backup record
 and also requires confirmation.
 
+The local MCP stdio adapter is read-only and fixes its project scope at process startup through
+`--project=<directory>`. It exposes only capability listing, bounded analysis and blueprint proposal;
+it does not expose arbitrary paths, commands, writes or MCP server discovery.
+
 The browser prototype also supports bounded, local-only ZIP import/export through a dependency-free
 store-only ZIP helper. Unsupported compression, traversal, symlink entries, malformed headers and
 resource-limit violations are rejected before files reach the metadata analyzer.
@@ -81,6 +85,8 @@ A future `scanProject()` belongs outside core because it accesses the filesystem
   but never returns their contents or applies changes.
 - Apply accepts only a validated manifest under `generated/`, rejects symlinked staging/project paths,
   writes through temporary files, and records replacements for scoped rollback.
+- The MCP adapter uses the official stdio SDK boundary; stdout is protocol-only and tool results are
+  redacted summaries rather than raw project files or manifest contents.
 - Avoid hardcoded model versions and undocumented service-specific keys.
 
 ## Task pack contract (planned)
