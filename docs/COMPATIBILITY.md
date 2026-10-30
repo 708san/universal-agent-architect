@@ -42,6 +42,8 @@ it does not verify Codex's native MCP discovery or permission behavior.
 - MCP TypeScript SDK (v2): https://ts.sdk.modelcontextprotocol.io/v2/
 - MCP stdio serving: https://ts.sdk.modelcontextprotocol.io/v2/serving/stdio
 - MCP `2026-07-28` release: https://blog.modelcontextprotocol.io/posts/2026-07-28/
+- OpenAI plugin MCP manifest: https://developers.openai.com/plugins/deploy/submission-errors
+- Gemini CLI MCP configuration: https://geminicli.com/docs/tools/mcp-server/
 - OpenAI Docs MCP (opt-in): https://developers.openai.com/learn/docs-mcp
 - ChatGPT plugins/MCP: https://developers.openai.com/plugins/quickstart
 

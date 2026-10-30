@@ -33,6 +33,17 @@ function summarizeConfig(existingConfig) {
   return counts;
 }
 
+function summarizeMcpConfig(mcpConfig) {
+  const summary = { servers: 0, byTransport: {}, byStatus: {}, credentialLikeCount: 0 };
+  for (const finding of mcpConfig?.findings ?? []) {
+    summary.servers++;
+    summary.byTransport[finding.transport] = (summary.byTransport[finding.transport] ?? 0) + 1;
+    summary.byStatus[finding.status] = (summary.byStatus[finding.status] ?? 0) + 1;
+    if (finding.hasCredentialLikeFields) summary.credentialLikeCount++;
+  }
+  return summary;
+}
+
 function redactFacts(output) {
   const facts = output.facts ?? {};
   return {
@@ -45,6 +56,7 @@ function redactFacts(output) {
     hasExistingSkills: facts.hasExistingSkills,
     existingSettingsCount: facts.existingSettingsPaths?.length ?? 0,
     existingConfigStatuses: summarizeConfig(output.existingConfig),
+    mcpConfig: summarizeMcpConfig(output.mcpConfig),
     warnings: facts.warnings,
   };
 }
@@ -123,7 +135,7 @@ function buildServer() {
     inputSchema: z.object({}),
   }, async () => {
     try {
-      const output = await runCli(['analyze', projectRoot, 'codex', 'baseline', '--config']);
+      const output = await runCli(['analyze', projectRoot, 'codex', 'baseline', '--config', '--mcp-config']);
       return textResult({ projectScope: 'fixed-startup-project', facts: redactFacts(output) });
     } catch {
       return textResult({ error: 'Project analysis failed safely.' }, true);
@@ -138,7 +150,7 @@ function buildServer() {
     }),
   }, async ({ target, securityProfile }) => {
     try {
-      const output = await runCli(['analyze', projectRoot, target, securityProfile, '--config']);
+      const output = await runCli(['analyze', projectRoot, target, securityProfile, '--config', '--mcp-config']);
       return textResult({ projectScope: 'fixed-startup-project', blueprint: redactBlueprint(output.blueprint), facts: redactFacts(output) });
     } catch {
       return textResult({ error: 'Blueprint proposal failed safely.' }, true);

@@ -22,6 +22,10 @@ The local MCP stdio adapter is read-only and fixes its project scope at process 
 `--project=<directory>`. It exposes only capability listing, bounded analysis and blueprint proposal;
 it does not expose arbitrary paths, commands, writes or MCP server discovery.
 
+The CLI can inspect declared MCP configuration with `analyze --mcp-config`. This is structural
+discovery only: it reads bounded `.mcp.json`, `.gemini/settings.json` and `.codex/config.toml` entries,
+never resolves values, starts a server or contacts a URL.
+
 The browser prototype also supports bounded, local-only ZIP import/export through a dependency-free
 store-only ZIP helper. Unsupported compression, traversal, symlink entries, malformed headers and
 resource-limit violations are rejected before files reach the metadata analyzer.
