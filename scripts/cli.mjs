@@ -1,18 +1,28 @@
 #!/usr/bin/env node
 import { lstat, readdir, readFile, mkdir, writeFile, access, realpath } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts, safeRelativePath, findOutputCollisions, findOutputConflicts } from '../dist/core.js';
+import { analyzeAstSources } from '../dist/ast-analyzer.js';
 
 const ignored = new Set(['node_modules', '.git', '.env', '.ssh', '.aws', '.npmrc', '.venv', 'venv', 'dist', 'coverage', 'build', '.next', 'secrets', 'private']);
 const allowedHiddenDirectories = new Set(['.github', '.codex', '.agents']);
 const manifestNames = ['package.json', 'pyproject.toml', 'requirements.txt'];
 const MAX_DEPTH = 8;
 const MAX_FILES = 5_000;
-async function scan(dir) {
+const AST_MAX_FILES = 100;
+const AST_MAX_FILE_BYTES = 512_000;
+const AST_MAX_TOTAL_BYTES = 5 * 1024 * 1024;
+const astAssets = {
+  runtimeWasm: fileURLToPath(new URL('../node_modules/web-tree-sitter/web-tree-sitter.wasm', import.meta.url)),
+  pythonWasm: fileURLToPath(new URL('../node_modules/tree-sitter-python/tree-sitter-python.wasm', import.meta.url)),
+  typescriptWasm: fileURLToPath(new URL('../node_modules/tree-sitter-typescript/tree-sitter-typescript.wasm', import.meta.url)),
+};
+async function scan(dir, { includeAst = false } = {}) {
   const rootStat = await lstat(dir);
   if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) throw new Error('Expected a non-symlink directory');
   const rootReal = await realpath(dir);
-  const paths = []; const manifests = {}; const warnings = []; const warningSet = new Set(); let count = 0;
+  const paths = []; const manifests = {}; const astSources = []; const warnings = []; const warningSet = new Set(); let count = 0; let astBytes = 0;
   const warn = message => { if (!warningSet.has(message)) { warningSet.add(message); warnings.push(message); } };
   const shouldSkip = entry => {
     const lower = entry.name.toLowerCase();
@@ -52,26 +62,41 @@ async function scan(dir) {
           try { manifests[entry.name] = await readFile(candidate, 'utf8'); }
           catch { warn('Skipped an unreadable manifest.'); }
         }
+        if (includeAst && /\.(?:py|tsx?)$/i.test(r)) {
+          if (astSources.length >= AST_MAX_FILES) warn('AST file limit reached; additional source files were ignored.');
+          else if (stat.size > AST_MAX_FILE_BYTES) warn('Skipped an AST source exceeding the file size limit.');
+          else if (astBytes + stat.size > AST_MAX_TOTAL_BYTES) warn('AST total source size limit reached; additional source files were ignored.');
+          else {
+            try { astSources.push({ path: r, content: await readFile(candidate, 'utf8') }); astBytes += stat.size; }
+            catch { warn('Skipped an unreadable AST source.'); }
+          }
+        }
       }
     }
   }
-  await walk(); return { paths, manifests, warnings };
+  await walk(); return { paths, manifests, warnings, astSources };
 }
 async function main() {
   const [command = 'help', folder = '.', target = 'codex', securityProfile = 'baseline', ...options] = process.argv.slice(2);
   const dryRun = options.includes('--dry-run');
+  const includeAst = options.includes('--ast');
   if (command !== 'analyze' && command !== 'generate') {
-    console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run]');
+    console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run] [--ast]');
     return;
   }
-  if (options.some(option => option !== '--dry-run') || (dryRun && command !== 'generate')) throw new Error('The --dry-run option is only available for generate.');
+  if (options.some(option => !['--dry-run', '--ast'].includes(option)) || (dryRun && command !== 'generate')) throw new Error('Unsupported CLI option.');
+  if (includeAst && command !== 'analyze') throw new Error('The --ast option is only available for analyze.');
   if (securityProfile !== 'baseline' && securityProfile !== 'strict') throw new Error('Security profile must be baseline or strict');
   const abs = path.resolve(folder);
   if (!(await lstat(abs)).isDirectory()) throw new Error('Expected a directory');
-  const input = await scan(abs);
+  const input = await scan(abs, { includeAst });
   const facts = analyzeProject(input);
   const blueprint = proposeBlueprint(facts, { target, workType: 'coding', needsReview: true, securityProfile });
-  if (command === 'analyze') { console.log(JSON.stringify({ facts, blueprint }, null, 2)); return; }
+  if (command === 'analyze') {
+    const ast = includeAst ? await analyzeAstSources(input.astSources, { assets: astAssets }) : undefined;
+    console.log(JSON.stringify({ facts, blueprint, ...(ast ? { ast } : {}) }, null, 2));
+    return;
+  }
   const rendered = generateArtifacts(blueprint);
   const issues = validateArtifacts(rendered);
   if (issues.length) throw new Error(issues.join('; '));

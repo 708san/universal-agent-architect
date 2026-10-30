@@ -1,6 +1,6 @@
 # Plan 0019 — Bounded AST parser evaluation
 
-Status: dependency approval required before implementation
+Status: CLI-first slice implemented; browser asset packaging remains planned
 
 ## Objective
 
@@ -10,11 +10,12 @@ the offline, metadata-minimizing core boundary.
 ## Current facts
 
 - `src/core.ts` currently receives paths and allowlisted manifest strings, not arbitrary source content.
-- The repository has no Tree-sitter dependency or vendored grammar assets.
+- The approved implementation uses pinned `web-tree-sitter` and Python/TypeScript grammar
+  packages as local WASM assets. The pure planning core remains dependency-free.
 - AST parsing would require bounded source-content transport in CLI/browser adapters and a reviewed
   dependency/grammar license set.
 
-## Proposed slice after approval
+## Implemented slice
 
 - Keep AST parsing outside the pure planning core in an adapter/analyzer module.
 - Accept only explicitly selected, safe relative source files under strict per-file, total-byte and
@@ -22,8 +23,21 @@ the offline, metadata-minimizing core boundary.
 - Return structural facts only: syntax validity, declarations/import counts and test-like markers;
   never retain or return source text.
 - Support Python and TypeScript first; mark other languages as `unsupported` or `planned`.
-- Add deterministic Node/browser-compatible fixtures, malformed-source tests, limit tests and a bundle
-  size budget. Use pinned versions and `npm ci --ignore-scripts` in CI.
+- Add deterministic Node fixtures, malformed-source tests and limit tests. Use pinned versions and
+  `npm ci --ignore-scripts` in CI.
+
+The first implementation is intentionally CLI-only:
+
+- `node scripts/cli.mjs analyze <directory> codex baseline --ast` reads only bounded local Python and
+  TypeScript sources and emits structural facts.
+- Dependencies are pinned to `web-tree-sitter@0.27.1`, `tree-sitter-python@0.25.0` and
+  `tree-sitter-typescript@0.23.2`; package metadata declares MIT licenses.
+- The local WASM assets total approximately 2.1 MB: runtime 210,415 bytes, Python 457,883 bytes and
+  TypeScript 1,413,849 bytes.
+- Install scripts were not run. The CLI does not download parser assets at runtime.
+
+Browser loading of these assets remains a separate task because it needs an explicit static-asset
+packaging decision and browser no-network tests.
 
 ## Security/data-flow review
 
@@ -36,16 +50,16 @@ the offline, metadata-minimizing core boundary.
 
 ## Dependency approval gate
 
-Before implementation, explicitly approve network access to inspect/install pinned Tree-sitter
-packages and grammar assets. Record package versions, license evidence, bundle-size measurements and
-whether browser loading is from local assets only. Do not run install scripts.
+The dependency/network approval was granted for this CLI-first slice. Package versions, license
+evidence, bundle-size measurements and the browser deferral are recorded above. Install scripts were
+not run.
 
 ## Verification
 
 - `npm run check`
 - `git diff --check`
 - Offline parser fixtures and negative security fixtures
-- Browser asset loading and no-outgoing-request tests
+- Browser asset loading and no-outgoing-request tests (pending browser packaging)
 - Clean `npm ci --ignore-scripts --no-audit --no-fund`
 
 ## Rollback
@@ -57,5 +71,6 @@ are modified.
 
 - [x] Inspect current core boundary and confirm no local Tree-sitter dependency exists.
 - [x] Define bounded data flow, unsupported behavior and verification gates.
-- [ ] Obtain explicit dependency/network approval.
-- [ ] Implement and measure the approved parser slice.
+- [x] Obtain explicit dependency/network approval.
+- [x] Implement and measure the approved CLI parser slice.
+- [ ] Package local parser assets for the browser and add browser no-network tests.

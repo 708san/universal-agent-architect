@@ -12,6 +12,7 @@
 npm install
 npm run check
 node scripts/cli.mjs analyze ./examples/sample-python
+node scripts/cli.mjs analyze ./examples/sample-python codex baseline --ast
 node scripts/cli.mjs generate ./examples/sample-python codex
 npm run serve
 ```
