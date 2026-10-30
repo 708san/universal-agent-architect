@@ -19,7 +19,7 @@ permission inheritance or actual Skill execution. The target therefore remains *
 |---|---|---|---|---|---|
 | Codex (CLI/IDE) | `AGENTS.md` | `.agents/skills/` | `.codex/agents/*.toml` | `config.toml` or CLI | **Partial** (basic rules/skills, optional reviewer) |
 | Claude Code | `CLAUDE.md` | `.claude/skills/<name>/SKILL.md` | `.claude/agents/<name>.md` | supported but not rendered | **Partial** (format-level renderer; runtime unverified) |
-| Gemini CLI | `GEMINI.md` | supported (target-specific) | supported | supported | **No** |
+| Gemini CLI | `GEMINI.md` | `.gemini/skills/<name>/SKILL.md` | `.gemini/agents/<name>.md` | documented but not rendered | **Partial** (format-level renderer; runtime unverified) |
 | Antigravity | verify current native paths before implementation | verify | verify | verify | **No** |
 | ChatGPT browser/plugin | depends on product/plan | supported in eligible contexts | do not assume Codex agents | remote MCP/plugin | **No** |
 
@@ -49,6 +49,9 @@ it does not verify Codex's native MCP discovery or permission behavior.
 - Claude Code memory: https://code.claude.com/docs/en/memory
 - Claude Code Skills: https://code.claude.com/docs/en/skills
 - Claude Code subagents: https://code.claude.com/docs/en/sub-agents
+- Gemini CLI GEMINI.md: https://geminicli.com/docs/cli/gemini-md/
+- Gemini CLI Agent Skills: https://geminicli.com/docs/cli/creating-skills/
+- Gemini CLI subagents: https://geminicli.com/docs/core/subagents/
 
 ## Version policy
 Record target, UI/CLI edition, version, official URL, date checked, supported/unknown/unsupported/experimental status and test fixture in each capability snapshot. Do not auto-replace reviewed snapshots with untrusted web content.
