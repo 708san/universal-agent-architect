@@ -52,6 +52,8 @@ target, registry, verification and security provenance. It contains no project s
 `DesignRequest.securityProfile` selects the deterministic `baseline` or `strict` security
 requirements recorded in `Blueprint.security`. The profile is a declarative requirement and test
 plan; target adapters must enforce it and report unsupported enforcement visibly.
+Strict Codex generation also emits an instruction-only `security-verification` Skill that organizes
+bounded local evidence collection; it adds no tools or runtime permissions.
 
 A future `scanProject()` belongs outside core because it accesses the filesystem. Untrusted project files must be treated as data, never instructions to Codex or a model. No runtime invocation of imported MCP servers during inventory.
 
