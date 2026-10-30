@@ -109,3 +109,56 @@ test('CLI config review reports safe statuses and dry-run changes without source
     assert.ok(!dryRun.stdout.includes('secret skill instructions'));
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test('CLI apply previews without consent and rollback restores the previous project', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'uaa-'));
+  const project = path.join(root, 'project');
+  try {
+    await mkdir(project, { recursive: true });
+    await writeFile(path.join(project, 'AGENTS.md'), 'original instructions');
+    const generate = spawnSync(process.execPath, [cli, 'generate', project, 'codex'], { cwd: root, encoding: 'utf8' });
+    assert.equal(generate.status, 0, generate.stderr);
+    const staging = path.join(root, 'generated', 'project');
+
+    const preview = spawnSync(process.execPath, [cli, 'apply', project, '--staging=generated/project'], { cwd: root, encoding: 'utf8' });
+    assert.equal(preview.status, 0, preview.stderr);
+    assert.equal(JSON.parse(preview.stdout).mode, 'apply-preview');
+    assert.equal(await readFile(path.join(project, 'AGENTS.md'), 'utf8'), 'original instructions');
+
+    const applied = spawnSync(process.execPath, [cli, 'apply', project, '--staging=generated/project', '--confirm'], { cwd: root, encoding: 'utf8' });
+    assert.equal(applied.status, 0, applied.stderr);
+    const appliedOutput = JSON.parse(applied.stdout);
+    assert.equal(appliedOutput.mode, 'applied');
+    assert.notEqual(await readFile(path.join(project, 'AGENTS.md'), 'utf8'), 'original instructions');
+    assert.ok(appliedOutput.changes.some(change => change.path === 'AGENTS.md' && change.action === 'replace'));
+
+    const rollbackPreview = spawnSync(process.execPath, [cli, 'rollback', project, '--staging=generated/project', `--rollback-id=${appliedOutput.rollbackId}`], { cwd: root, encoding: 'utf8' });
+    assert.equal(rollbackPreview.status, 0, rollbackPreview.stderr);
+    assert.equal(JSON.parse(rollbackPreview.stdout).mode, 'rollback-preview');
+    const rollback = spawnSync(process.execPath, [cli, 'rollback', project, '--staging=generated/project', `--rollback-id=${appliedOutput.rollbackId}`, '--confirm'], { cwd: root, encoding: 'utf8' });
+    assert.equal(rollback.status, 0, rollback.stderr);
+    assert.equal(JSON.parse(rollback.stdout).mode, 'rolled-back');
+    assert.equal(await readFile(path.join(project, 'AGENTS.md'), 'utf8'), 'original instructions');
+    await readFile(path.join(staging, '.uaa-rollback', appliedOutput.rollbackId, 'ROLLBACK.json'), 'utf8');
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('CLI apply rejects staging paths outside generated and unsafe manifests', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'uaa-'));
+  const project = path.join(root, 'project');
+  try {
+    await mkdir(project, { recursive: true });
+    const outside = path.join(root, 'outside');
+    await mkdir(outside, { recursive: true });
+    const outsideRun = spawnSync(process.execPath, [cli, 'apply', project, `--staging=${outside}`], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(outsideRun.status, 0);
+    assert.match(outsideRun.stderr, /inside generated/);
+
+    const generate = spawnSync(process.execPath, [cli, 'generate', project, 'codex'], { cwd: root, encoding: 'utf8' });
+    assert.equal(generate.status, 0, generate.stderr);
+    await symlink(outside, path.join(root, 'generated', 'project', '.uaa-rollback'));
+    const symlinkRun = spawnSync(process.execPath, [cli, 'apply', project, '--staging=generated/project', '--confirm'], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(symlinkRun.status, 0);
+    assert.match(symlinkRun.stderr, /Rollback directory is unsafe/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
