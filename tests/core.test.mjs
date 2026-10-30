@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements, validateBlueprint, findOutputCollisions, findOutputConflicts } from '../dist/core.js';
+import { analyzeProject, normalizeBrowserRelativePaths, safeRelativePath, proposeBlueprint, generateArtifacts, validateArtifacts, validateSecurityRequirements, validateBlueprint, findOutputCollisions, findOutputConflicts, findOutputChanges } from '../dist/core.js';
 
 test('sensitive paths and traversal are filtered', () => {
   for (const p of ['.env','.env.local','folder/.env.production','folder/../etc/passwd','/etc/passwd','C:/secret','dir/.ssh/key','dir/private/data','dir/tls.pem']) assert.equal(safeRelativePath(p), null);
@@ -92,6 +92,13 @@ test('output collision detection is safe and deterministic', () => {
     { path: '.agents/skills/review/SKILL.md', category: 'skill' },
     { path: '.codex/config.toml', category: 'codex-setting' },
     { path: 'src/app.ts', category: 'project-file' },
+  ]);
+  assert.deepEqual(findOutputChanges(['AGENTS.md', 'src/app.ts'], [
+    { path: 'AGENTS.md', content: 'x' },
+    { path: '.agents/skills/review/SKILL.md', content: 'x' },
+  ]), [
+    { path: 'AGENTS.md', action: 'replace', category: 'instruction' },
+    { path: '.agents/skills/review/SKILL.md', action: 'add', category: 'skill' },
   ]);
 });
 test('malformed Blueprints fail closed before rendering', () => {

@@ -79,6 +79,8 @@ export interface GeneratedArtifact { path: string; content: string }
 export interface GenerateResult { supported: boolean; reason?: string; files: GeneratedArtifact[] }
 export type OutputConflictCategory = 'instruction' | 'skill' | 'codex-setting' | 'project-file';
 export interface OutputConflict { path: string; category: OutputConflictCategory }
+export type OutputChangeAction = 'add' | 'replace';
+export interface OutputChange { path: string; action: OutputChangeAction; category: OutputConflictCategory }
 
 const forbiddenParts = new Set([
   '.git', '.env', '.ssh', '.aws', '.npmrc', 'node_modules', 'vendor', 'dist', 'build',
@@ -492,14 +494,26 @@ export function findOutputCollisions(existingPaths: string[], files: GeneratedAr
 /** Explain source-project paths that would be replaced if staged artifacts were applied. */
 export function findOutputConflicts(existingPaths: string[], files: GeneratedArtifact[]): OutputConflict[] {
   const existing = new Set(existingPaths.map(safeRelativePath).filter((value): value is string => value !== null));
-  return [...new Set(files.map(file => file.path).filter(filePath => existing.has(filePath)))].map(path => {
-    const category: OutputConflictCategory = /(^|\/)(?:AGENTS(?:\.override)?|CLAUDE|GEMINI)\.md$/i.test(path)
-      ? 'instruction'
-      : /^(?:\.agents\/skills|skills)\/[^/]+\/SKILL\.md$/i.test(path)
-        ? 'skill'
-        : /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(path)
-          ? 'codex-setting'
-          : 'project-file';
-    return { path, category };
+  return [...new Set(files.map(file => file.path).filter(filePath => existing.has(filePath)))].map(path => ({
+    path,
+    category: outputConflictCategory(path),
+  }));
+}
+
+function outputConflictCategory(path: string): OutputConflictCategory {
+  return /(^|\/)(?:AGENTS(?:\.override)?|CLAUDE|GEMINI)\.md$/i.test(path)
+    ? 'instruction'
+    : /^(?:\.agents\/skills|skills)\/[^/]+\/SKILL\.md$/i.test(path)
+      ? 'skill'
+      : /^\.codex\/(?:config\.toml|agents\/[^/]+\.toml)$/i.test(path)
+        ? 'codex-setting'
+        : 'project-file';
+}
+
+/** Describe a read-only dry-run as additions and replacements without comparing file contents. */
+export function findOutputChanges(existingPaths: string[], files: GeneratedArtifact[]): OutputChange[] {
+  const existing = new Set(existingPaths.map(safeRelativePath).filter((value): value is string => value !== null));
+  return files.map(file => {
+    return { path: file.path, action: existing.has(file.path) ? 'replace' : 'add', category: outputConflictCategory(file.path) };
   });
 }
