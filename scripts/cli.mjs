@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { lstat, readdir, readFile, mkdir, writeFile, access, realpath, copyFile, rename, rm } from 'node:fs/promises';
+import { lstat, opendir, readFile, mkdir, writeFile, access, realpath, copyFile, rename, rm } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,8 @@ const allowedHiddenDirectories = new Set(['.github', '.codex', '.agents', '.gemi
 const manifestNames = ['package.json', 'pyproject.toml', 'requirements.txt'];
 const MAX_DEPTH = 8;
 const MAX_FILES = 5_000;
+const MAX_DIRECTORY_ENTRIES = 1_024;
+const MAX_SCANNED_ENTRIES = 20_000;
 const AST_MAX_FILES = 100;
 const AST_MAX_FILE_BYTES = 512_000;
 const AST_MAX_TOTAL_BYTES = 5 * 1024 * 1024;
@@ -191,7 +193,7 @@ async function scan(dir, { includeAst = false, includeConfig = false, includeMcp
   const rootStat = await lstat(dir);
   if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) throw new Error('Expected a non-symlink directory');
   const rootReal = await realpath(dir);
-  const paths = []; const manifests = {}; const astSources = []; const configSources = []; const mcpSources = []; const warnings = []; const warningSet = new Set(); let count = 0; let astBytes = 0;
+  const paths = []; const manifests = {}; const astSources = []; const configSources = []; const mcpSources = []; const warnings = []; const warningSet = new Set(); let count = 0; let astBytes = 0; let scannedEntries = 0;
   const warn = message => { if (!warningSet.has(message)) { warningSet.add(message); warnings.push(message); } };
   const shouldSkip = entry => {
     const lower = entry.name.toLowerCase();
@@ -208,9 +210,25 @@ async function scan(dir, { includeAst = false, includeConfig = false, includeMcp
   };
   async function walk(relative = '', depth = 0) {
     if (depth > MAX_DEPTH || count >= MAX_FILES) { warn('Inventory scan limit reached; additional entries were ignored.'); return; }
-    let entries;
-    try { entries = await readdir(path.join(dir, relative), { withFileTypes: true }); }
+    const entries = [];
+    let directory;
+    try { directory = await opendir(path.join(dir, relative)); }
     catch { warn('Skipped an unreadable directory.'); return; }
+    let truncated = false;
+    try {
+      for await (const entry of directory) {
+        if (scannedEntries >= MAX_SCANNED_ENTRIES || entries.length >= MAX_DIRECTORY_ENTRIES) {
+          truncated = true;
+          break;
+        }
+        entries.push(entry);
+        scannedEntries++;
+      }
+    } catch {
+      warn('Skipped an unreadable directory.');
+      return;
+    }
+    if (truncated) warn('Directory entry limit reached; additional entries were ignored.');
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
       if (count >= MAX_FILES) { warn('Inventory scan limit reached; additional entries were ignored.'); return; }

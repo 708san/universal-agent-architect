@@ -64,6 +64,22 @@ test('CLI skips hidden directories and limits traversal depth', async () => {
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('CLI bounds directory enumeration and reports truncation', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'uaa-'));
+  const project = path.join(root, 'project');
+  try {
+    await mkdir(project, { recursive: true });
+    for (let index = 0; index < 1_025; index++) {
+      await writeFile(path.join(project, `ignored-${String(index).padStart(4, '0')}.txt`), 'metadata only');
+    }
+    const analyze = spawnSync(process.execPath, [cli, 'analyze', project, 'codex'], { cwd: root, encoding: 'utf8' });
+    assert.equal(analyze.status, 0, analyze.stderr);
+    const output = JSON.parse(analyze.stdout);
+    assert.equal(output.facts.filesSeen, 1_024);
+    assert.ok(output.facts.warnings.some(warning => warning.includes('Directory entry limit')));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('CLI dry-run reports output collisions without writing', async () => {
   const root = await mkdtemp(path.join(tmpdir(),'uaa-'));
   const project = path.join(root, 'project');
