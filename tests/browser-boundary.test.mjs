@@ -38,6 +38,8 @@ test('static browser boundary is local-only and allowlisted', async () => {
   assert.equal(page.headers.get('x-content-type-options'), 'nosniff');
 
   const html = await page.text();
+  assert.match(html, /http-equiv="Content-Security-Policy"/);
+  assert.match(html, /connect-src 'none'/);
   for (const api of ['fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon']) assert.doesNotMatch(html, new RegExp(api.replace('(', '\\(')));
   assert.doesNotMatch(html, /<script type="module">/);
   assert.match(html, /importmap/);
