@@ -20,7 +20,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
   - [x] Basic metadata inventory and no-write output collision preview.
   - [x] Source-project conflict categories are reported separately in dry-run output.
   - [x] Bounded status parser for recognized instructions, Skills and Codex settings with add/replace dry-run changes.
-- [ ] Robust project analysis (AST via Tree-sitter WASM), bounded file budget and OS-specific safe file traversal.
+- [x] Robust project analysis (AST via Tree-sitter WASM), bounded file budget and OS-specific safe file traversal.
   - [x] Bounded Tree-sitter WASM evaluation plan with dependency, bundle-size and security gates.
   - [x] CLI-first bounded Python/TypeScript structural analyzer with local pinned WASM assets.
   - [x] Browser-local parser asset packaging and no-network verification.
@@ -30,11 +30,11 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [ ] Verified Codex adapter covering rules/skills and supported subagent/MCP proposals.
   - [x] Official format fixtures and fail-closed validators for AGENTS.md, Agent Skills and custom-agent TOML.
   - [ ] Runtime loading and MCP behavior remain unverified.
-- [ ] Browser ZIP import/export; safe directory selection fallback; static Pages deploy only after CSP/security tests.
+- [x] Browser ZIP import/export; safe directory selection fallback; static Pages deploy only after CSP/security tests.
   - [x] Bounded offline store-only ZIP import/export with traversal, symlink and resource-limit checks.
   - [x] Static browser boundary and CSP tests.
   - [x] Standard multiple-file selection fallback when folder selection is unavailable.
-  - [ ] Static Pages deployment remains unimplemented.
+  - [x] Static Pages packaging and Actions deployment workflow added; Pages enablement and live deployment remain user-controlled.
 
 **Exit:** safe coding-project analysis; reproducible, verified Codex files; no AI required.
 

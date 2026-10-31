@@ -28,9 +28,9 @@ $('run').addEventListener('click', async () => {
     lastArtifacts = rendered.supported ? rendered.files : [];
     $('export').disabled = !lastArtifacts.length;
     const ast = astSelection ? await analyzeAstSources(astSelection.sources, { assets: {
-      runtimeWasm: '/web/vendor/web-tree-sitter.wasm',
-      pythonWasm: '/web/vendor/tree-sitter-python.wasm',
-      typescriptWasm: '/web/vendor/tree-sitter-typescript.wasm',
+      runtimeWasm: new URL('./vendor/web-tree-sitter.wasm', import.meta.url).href,
+      pythonWasm: new URL('./vendor/tree-sitter-python.wasm', import.meta.url).href,
+      typescriptWasm: new URL('./vendor/tree-sitter-typescript.wasm', import.meta.url).href,
     } }) : undefined;
     if (ast && astSelection.warnings.length) ast.warnings = [...new Set([...astSelection.warnings, ...ast.warnings])];
     $('output').textContent = JSON.stringify({ facts, blueprint, ...(ast ? { ast } : {}), rendering: {

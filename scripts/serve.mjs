@@ -19,7 +19,7 @@ createServer(async (req, res) => {
     const content = await readFile(file);
     res.writeHead(200, {
       'content-type': mime[path.extname(file)] ?? 'application/octet-stream',
-      'content-security-policy': "default-src 'none'; script-src 'self' 'sha256-TYtj7t8BjFvc8RY550tH/cFAE0l1pYZ3xHEQoEVgA4U='; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'",
+      'content-security-policy': "default-src 'none'; script-src 'self' 'sha256-jtV2FIxy4X2wtE23A0izgYxYGKh5FcEOmeZVzTccf0E='; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'",
       'referrer-policy': 'no-referrer',
       'x-content-type-options': 'nosniff',
     });
