@@ -40,6 +40,11 @@ test('static browser boundary is local-only and allowlisted', async () => {
   const html = await page.text();
   assert.match(html, /http-equiv="Content-Security-Policy"/);
   assert.match(html, /connect-src 'none'/);
+  for (const id of ['files', 'files-fallback', 'zip', 'target', 'security', 'ast', 'review', 'run', 'export', 'status', 'output']) {
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+  assert.match(html, /ローカルでプロジェクトの構成を確認し/);
+  assert.match(html, /解析結果はここに表示されます/);
   for (const api of ['fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon']) assert.doesNotMatch(html, new RegExp(api.replace('(', '\\(')));
   assert.doesNotMatch(html, /<script type="module">/);
   assert.match(html, /importmap/);
