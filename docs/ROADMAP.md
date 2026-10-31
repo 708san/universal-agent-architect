@@ -24,6 +24,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
   - [x] Bounded Tree-sitter WASM evaluation plan with dependency, bundle-size and security gates.
   - [x] CLI-first bounded Python/TypeScript structural analyzer with local pinned WASM assets.
   - [x] Browser-local parser asset packaging and no-network verification.
+  - [x] Directory enumeration has per-directory and whole-scan entry budgets with visible truncation warnings.
 - [x] Minimal decision engine with explainability and eval fixtures; no unnecessary agent inflation.
   - [x] Initial small/medium/large planner evaluation fixtures.
 - [ ] Verified Codex adapter covering rules/skills and supported subagent/MCP proposals.
