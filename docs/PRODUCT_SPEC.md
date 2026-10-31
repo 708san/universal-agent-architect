@@ -40,7 +40,10 @@ Analyze explicitly selected local project metadata, choose the smallest effectiv
 - Deterministic results for same inputs + registry version; reproducible output manifests.
 - Explicit error on unsupported targets and oversized/malformed inputs.
 - Portable on macOS / Windows / Linux (full local permissions may differ).
-- Accessible Japanese-first UI, English internal identifiers.
+- Accessible Japanese-first UI, English internal identifiers. UI work follows
+  [`UI_DESIGN_GUIDELINES.md`](UI_DESIGN_GUIDELINES.md): readability first, portable local font
+  fallback, small semantic color palette, explicit operation states and no remote UI assets in the
+  offline core.
 
 ## Not in initial milestone
 Fully automated project meaning analysis; one-click public plugin publication; universal agent runtime; autonomous execution of generated skills; remote MCP access from ChatGPT; production-grade DLP.

@@ -67,6 +67,19 @@ Skill instructions must state what to do with untrusted input, what not to execu
 required, and how to report evidence. A Skill is not permission to access secrets, start arbitrary
 MCP servers, execute imported scripts or send project data externally.
 
+## UI standard
+
+When a generated agent, task pack or Skill includes an interactive UI, follow
+[`UI_DESIGN_GUIDELINES.md`](UI_DESIGN_GUIDELINES.md). Prioritize readability, use a Japanese-first
+local font fallback, keep the color palette small and semantic, and show input scope, approvals,
+progress, errors and unsupported capabilities explicitly. Do not add remote fonts, CDN assets,
+telemetry or hidden network calls to an offline flow. Do not display raw source, secrets, tokens or
+full MCP credentials in normal UI output or errors.
+
+If the target is text-only or its UI capabilities are not documented and fixture-verified, keep the
+generated output text-only and mark visual UI support as unsupported. UI guidance never grants file,
+network, MCP, write or execution permissions.
+
 ## Review standard
 
 Reviewers check correctness, regressions, security boundaries, portability and unsupported claims.
