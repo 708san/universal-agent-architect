@@ -32,7 +32,7 @@ test('static browser boundary is local-only and allowlisted', async () => {
   assert.equal(page.status, 200);
   const csp = page.headers.get('content-security-policy');
   assert.match(csp, /default-src 'none'/);
-  assert.match(csp, /script-src 'self' 'sha256-TYtj7t8BjFvc8RY550tH\/cFAE0l1pYZ3xHEQoEVgA4U='/);
+  assert.match(csp, /script-src 'self' 'sha256-jtV2FIxy4X2wtE23A0izgYxYGKh5FcEOmeZVzTccf0E='/);
   assert.match(csp, /connect-src 'none'/);
   assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
   assert.equal(page.headers.get('x-content-type-options'), 'nosniff');

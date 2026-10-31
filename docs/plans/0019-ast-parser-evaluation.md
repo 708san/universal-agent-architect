@@ -1,6 +1,6 @@
 # Plan 0019 — Bounded AST parser evaluation
 
-Status: CLI-first slice implemented; browser asset packaging remains planned
+Status: complete
 
 ## Objective
 
@@ -73,4 +73,4 @@ are modified.
 - [x] Define bounded data flow, unsupported behavior and verification gates.
 - [x] Obtain explicit dependency/network approval.
 - [x] Implement and measure the approved CLI parser slice.
-- [ ] Package local parser assets for the browser and add browser no-network tests.
+- [x] Package local parser assets for the browser and add browser no-network tests.

@@ -11,4 +11,4 @@
 <label><input id="ast" type="checkbox"> ローカルAST解析を有効化（Python/TypeScript、明示選択時のみ）</label>
 <label><input id="review" type="checkbox" checked> コードレビューを追加</label><button id="run">構成を解析・提案</button><button id="export" disabled>生成物をZIP保存</button>
 <p class="note">未実装の出力先は「未対応」と表示します。ZIPは安全性確認済みの非圧縮方式だけに対応します。個別ファイル選択では階層情報を保持できない場合があります。AST解析は選択した場合だけローカルで実行し、ソース本文はレポートに含めません。</p><pre id="output" aria-live="polite">フォルダ、個別ファイルまたはZIPを選択してください。</pre>
-</main><script type="importmap">{"imports":{"web-tree-sitter":"/web/vendor/web-tree-sitter.js"}}</script><script type="module" src="/web/app.mjs"></script></body></html>
+</main><script type="importmap">{"imports":{"web-tree-sitter":"./web/vendor/web-tree-sitter.js"}}</script><script type="module" src="./web/app.mjs"></script></body></html>

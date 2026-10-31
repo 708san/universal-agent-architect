@@ -26,6 +26,7 @@ node scripts/cli.mjs apply ./examples/sample-python --staging=generated/sample-p
 node scripts/cli.mjs rollback ./examples/sample-python --staging=generated/sample-python --rollback-id=<id> --confirm
 npm run mcp -- --project=./examples/sample-python
 npm run serve
+npm run build && npm run pages
 ```
 
 CLIの4番目の引数で`baseline`（標準）または`strict`（強化）のセキュリティプロファイルを選べます。
@@ -35,6 +36,8 @@ node scripts/cli.mjs analyze ./examples/sample-python codex strict
 ```
 
 ブラウザ試作版：`http://127.0.0.1:4173/`。`npm run serve`はローカルHTTPの表示用であり、MCPサーバではありません。
+
+GitHub Pages用の静的配布物は`npm run build && npm run pages`で`.pages/`へ作成します。GitHub WebのSettings → Pages → SourceでGitHub Actionsを選択すると、`main`へのマージ後に`.github/workflows/pages.yml`が公開します。ページは静的・ローカル解析専用で、バックエンドや外部APIはありません。
 
 `generate` は既存プロジェクトを書き換えず、`generated/<folder>/` に新しい設定ファイルを出力します。同一出力先が存在すると失敗します。`generated/` 内のファイルを確認してから、ご自身で適用してください。
 

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 generated/
+.pages/
 web/vendor/
 .DS_Store
 .env
