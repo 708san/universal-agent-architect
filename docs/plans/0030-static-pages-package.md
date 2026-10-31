@@ -46,6 +46,8 @@ Disable or revert the Pages workflow and packaging script. No user project files
 ## Result
 
 - Browser references are repository-subpath safe and retain the local-only CSP boundary.
+- The CSP is present both in the local server response and as an HTML meta policy so static GitHub
+  Pages cannot silently lose the browser network boundary.
 - `npm run pages` creates `.pages/` with only the entrypoint, compiled JavaScript, browser modules and
   pinned local parser assets.
 - A least-privilege `main`/manual GitHub Pages workflow uses `upload-pages-artifact@v3` and

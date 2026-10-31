@@ -11,6 +11,8 @@ test('Pages package contains only the static browser allowlist', async () => {
   execFileSync(process.execPath, ['scripts/build-pages.mjs'], { cwd: root, encoding: 'utf8' });
   try {
     const index = await readFile(path.join(pages, 'index.html'), 'utf8');
+    assert.match(index, /http-equiv="Content-Security-Policy"/);
+    assert.match(index, /connect-src 'none'/);
     assert.match(index, /src="\.\/web\/app\.mjs"/);
     assert.match(index, /"\.\/web\/vendor\/web-tree-sitter\.js"/);
     assert.doesNotMatch(index, /src="\//);
