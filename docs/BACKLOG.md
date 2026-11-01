@@ -1,22 +1,48 @@
-# GitHub issue candidates — prioritized
+# Backlog and issue candidates — prioritized
 
-Create these as separate GitHub issues after the repository is published. Each issue should be a small reviewable PR.
+Status reviewed: 2026-11-01. Create GitHub issues only for the open work below; completed
+items are recorded as evidence and should not be recreated as duplicate issues.
 
-## P0
-1. **Verify offline-browser boundary** — Test network blocking, path normalization, static asset bundling, CSP in deployed hosting. Acceptance: no project data leaves browser in blocked-network test.
-2. **Harden inventory scanner** — Resolve symlinks, hidden directories, limits and user-approved scan scope across platforms. Acceptance: negative traversal, symlink and oversized input fixtures.
-3. **Add golden fixtures** — Given identical safe inputs, CLI and browser produce identical facts, blueprint and validation outcomes. Acceptance: deterministic snapshots.
+## Completed local foundation
 
-## P1
-4. **Canonical blueprint schema** — Versioned JSON Schema, migrations, explanations and provenance. Acceptance: invalid feature/platform combination rejected.
-5. **Official Codex adapter v1** — Detailed config/skills/subagent/MCP templates, current official docs, validated fixtures. Acceptance: Codex loads generated instructions/skills; unsupported gets explicit notice.
-6. **Existing-config inventory and dry-run diff** — Compare with existing AGENTS.md and skills; never overwrite. Acceptance: conflicts explained without local mutation.
-7. **AST parser spike** — Evaluate Tree-sitter WASM for Python/TS under browser constraints; report size/performance. Acceptance: no execution of target project.
-8. **Planner evaluation suite** — Small/medium/large projects, single vs multiagent choice, duplicate-skill avoidance. Acceptance: documented expected decisions and regressions.
+- Offline browser boundary: CSP, no-network policy, local asset allowlist and static Pages checks.
+- Bounded inventory scanner: sensitive paths, traversal, symlink, hidden-directory and resource-limit fixtures.
+- CLI/browser golden convergence for facts, Blueprint and artifact validation.
+- Store-only ZIP import/export with traversal, symlink, compression, CRC and resource-limit rejection.
+- Staged generation, dry-run conflict reporting, explicit apply and scoped rollback.
+- Blueprint/capability schemas, target format fixtures, planner evaluation and offline security regression tests.
 
-## P2
-9. **stdio MCP server** — Read-only list_capabilities/analyze_project/propose_blueprint with redacted responses. Acceptance: local MCP inspector test and data-flow threat checks.
-10. **Per-service adapters** — Claude Code, Gemini CLI, Antigravity, ChatGPT as independent verified issues. Acceptance: no unsupported feature claims. **Implemented at format level; runtime behavior remains separately unverified.**
+## Open engineering work
 
-## P3
-11. **Online specification refresh** — Add an explicit, allowlisted documentation retrieval mode that produces the same local candidate/diff format without auto-activation. Acceptance: retrieved text is treated as untrusted data, source/version/date are recorded, fixtures are reviewed, and offline mode remains unchanged.
+### P1 — Runtime and compatibility evidence
+
+1. **Codex runtime verification** — In a clean target project, verify `AGENTS.md`, Skills,
+   custom-agent loading and documented permission behavior. Acceptance: reproducible evidence
+   tied to a target/runtime version; unsupported behavior remains explicit.
+2. **Target runtime verification matrix** — Repeat the same evidence process for Claude Code,
+   Gemini CLI, Antigravity and ChatGPT where a supported local or hosted test environment exists.
+   Acceptance: no target is upgraded from `partial` without positive, negative and security evidence.
+3. **MCP authorization evidence** — Verify native target MCP discovery and approval behavior
+   separately from UAA's local read-only MCP boundary. Acceptance: no raw project content or
+   credentials are returned by default.
+
+### P3 — Opt-in online capabilities
+
+4. **Online specification refresh** — Add explicit, allowlisted retrieval that produces the
+   existing local candidate/diff format without auto-activation. Retrieved text remains untrusted;
+   source, version, date and reviewed fixtures are recorded.
+5. **Cloud/local AI connectors** — Add only behind outbound consent, data minimization, preview,
+   bounded cost and rollback controls.
+
+## External maintainer actions
+
+- Create GitHub issues for the open items above after confirming their acceptance criteria.
+- Verify `main` branch protection, required CI, private vulnerability reporting and a maintainer
+  security contact in GitHub settings.
+- Keep runtime evidence and incident records private when they contain source excerpts or findings.
+
+## Prioritization rule
+
+Finish offline evidence and security checks before adding network or model connectors. Do not
+change a capability from `partial`, `unknown` or `planned` to `verified` based on documentation
+alone.

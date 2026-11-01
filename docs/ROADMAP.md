@@ -6,9 +6,9 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [x] Project overview, scope, security rules, Codex guidance, focused skills, specialist reviewers.
 - [x] Pure TS rule-based prototype, safe project inventory, Codex sample generator, tests, basic browser/CLI.
 - [x] Confirm CI on GitHub, publish the public repository by project decision, and commit a reviewed dependency lockfile.
-- [ ] Create GitHub issues from `docs/BACKLOG.md` (external Web action remains).
+- [ ] Create or update GitHub issues for the remaining work (external Web action remains).
 - [x] Add fixture-based integration tests for CLI/browser convergence, scanner boundaries, dry-run output and planner decisions.
-- [ ] Fix remaining prototype limitations, including ZIP import/export and full target verification.
+- [x] Complete the offline prototype boundary: bounded scanner, browser CSP/no-network checks, ZIP import/export, staging and convergence fixtures.
 
 **Exit:** offline `npm run check` succeeds, prototype works, and documents clearly distinguish implemented vs planned.
 
@@ -41,7 +41,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 ## P2 — Local integration
 - [x] CLI application/rollback with staging, diff and explicit consent.
 - [x] Local MCP stdio with read-only operations first; test data minimization and injected text threats.
-- [x] Target adapters for Claude Code, Gemini CLI, Antigravity, ChatGPT (each staged and verified separately).
+- [x] Target adapter format renderers for Claude Code, Gemini CLI, Antigravity and ChatGPT (each staged and validated within documented scope).
   - [x] Claude Code format-level renderer for `CLAUDE.md`, Skills and read-only subagent definitions.
   - [x] Gemini CLI format-level renderer for `GEMINI.md`, Skills and read-only subagent definitions.
   - [x] Antigravity format-level renderer for workspace rules, Skills and read-only subagent definitions.
@@ -57,7 +57,8 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [ ] Specification registry update checker and candidate-diff workflow.
   - [x] Local candidate validation, metadata-only diff and explicit activation gate.
   - [ ] Explicit online retrieval from allowlisted official documentation with reviewable evidence.
-- [ ] Threat tests for secrets, prompt injection, malicious manifests, remote data return.
+- [x] Offline threat regression tests for secrets, traversal, injected instructions, malicious Skills, malformed manifests, output collisions and redacted MCP output.
+- [ ] Threat tests for cloud/remote data return and runtime-specific permission enforcement.
 
 **Exit:** online modes are opt-in; the core remains usable with network disabled.
 
