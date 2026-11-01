@@ -269,11 +269,14 @@ export function validateBlueprint(value: unknown): string[] {
     if (!Array.isArray(value[field])) problems.push(`Blueprint ${field} must be an array.`);
   }
   if (Array.isArray(value.skills)) {
+    const skillIds = new Set<string>();
     value.skills.forEach((skill, index) => {
       if (!isRecord(skill) || !isSkillName(skill.id) || !isSafeSingleLineText(skill.purpose, MAX_SKILL_PURPOSE_LENGTH)) {
         problems.push(`Invalid skill at index ${index}.`);
       } else {
         problems.push(...unknownKeys(skill, ['id', 'purpose'], `Skill at index ${index}`));
+        if (skillIds.has(skill.id)) problems.push(`Duplicate skill ID: ${skill.id}.`);
+        skillIds.add(skill.id);
       }
     });
   }
