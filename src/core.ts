@@ -5,7 +5,7 @@ import { ANTIGRAVITY_SOURCE_URLS, renderAntigravityArtifacts } from './antigravi
 import { CHATGPT_SOURCE_URLS, renderChatgptArtifacts } from './chatgpt-adapter.js';
 import { formatProjectRequirements, normalizeProjectRequirements, validateProjectRequirements } from './requirements.js';
 import { REQUIREMENT_CHECKS } from './requirements.js';
-import { renderSkillMarkdown } from './skill-content.js';
+import { renderGitWorkflowPolicy, renderSkillMarkdown } from './skill-content.js';
 import type { ProjectRequirements, RequirementCheck } from './requirements.js';
 
 export type Target = 'codex' | 'claude-code' | 'gemini-cli' | 'antigravity' | 'chatgpt';
@@ -462,7 +462,7 @@ export function generateArtifacts(blueprint: Blueprint): GenerateResult {
       const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: renderSkillMarkdown(s.id, s.purpose) }));
       const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\nfeatures.shell_tool = false\nfeatures.apps = false\nfeatures.plugins = false\nfeatures.memories = false\nfeatures.request_permissions_tool = false\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
       return [
-        { path: 'AGENTS.md', content: `# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Security profile: ${blueprint.security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.\n- Required security checks: ${blueprint.security.securityTests.join(', ')}.\n- Before edits, inspect existing instructions and present a diff.\n- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n${formatProjectRequirements(blueprint.requirements)}\n` },
+        { path: 'AGENTS.md', content: `# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Security profile: ${blueprint.security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.\n- Required security checks: ${blueprint.security.securityTests.join(', ')}.\n- Before edits, inspect existing instructions and present a diff.\n${renderGitWorkflowPolicy()}\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n${formatProjectRequirements(blueprint.requirements)}\n` },
         ...skills,
         ...agents,
       ];

@@ -1,6 +1,6 @@
 import type { Blueprint, GeneratedArtifact } from './core.js';
 import { formatProjectRequirements } from './requirements.js';
-import { renderSkillMarkdown } from './skill-content.js';
+import { renderGitWorkflowPolicy, renderSkillMarkdown } from './skill-content.js';
 
 export const ANTIGRAVITY_SOURCE_URLS = [
   'https://antigravity.google/docs/rules/',
@@ -18,7 +18,7 @@ function instructionMarkdown(blueprint: Blueprint): string {
 - Security profile: ${security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.
 - Required security checks: ${security.securityTests.join(', ')}.
 - Before edits, inspect existing instructions and present a diff.
-- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.
+${renderGitWorkflowPolicy()}
 - Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.
 - Run only authorized tests and report verification honestly.
 ${formatProjectRequirements(blueprint.requirements)}

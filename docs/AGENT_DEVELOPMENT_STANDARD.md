@@ -15,6 +15,30 @@ permissions that are absent from the blueprint or target capability registry.
 7. Validate generated paths, schemas, Skill frontmatter and provenance in a staging area.
 8. Review the diff, run offline tests, and document limitations before release.
 
+## Git lifecycle
+
+Generated coding agents use this default lifecycle unless the target project documents a stricter
+one:
+
+1. Confirm the remote, default branch and a clean working tree; update local `main` before work.
+2. Create one short-lived `<type>/<slug>` branch for one coherent objective.
+3. Inspect status and existing rules, make a small plan, then edit only the approved scope.
+4. Run authorized checks, inspect the complete diff and use a Conventional Commit.
+5. Open a PR containing scope, security/data-flow impact, tests, limitations and rollback.
+6. Wait for CI and required review; do not merge an unreviewed or failing change.
+7. After merge, delete the branch and update local `main` before the next objective.
+
+The default agent permission is read/prepare/report. Commit, push, merge, branch deletion and
+history rewriting require explicit user approval for the named operation. An approval to commit or
+push does not authorize merge, force-push, reset, deletion or unrelated repository administration.
+If remote access is unavailable, report the local evidence and provide exact user-run commands;
+never invent PR, CI or merge results. These are workflow requirements, not a guarantee that a target
+runtime enforces Git permissions.
+
+The repository's Git rules are documented in [`DEVELOPMENT_WORKFLOW.md`](DEVELOPMENT_WORKFLOW.md).
+Generated agents should preserve project-specific stricter rules and should not silently replace
+them.
+
 ## Agent contract
 
 Every generated agent should make these fields explicit in the canonical Blueprint or adapter output:
