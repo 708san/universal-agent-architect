@@ -14,6 +14,11 @@ Gemini CLI Skills/subagent documentation, Google Antigravity rules/Skills/subage
 and OpenAI portable plugin documentation. This confirms documented file formats and discovery
 guidance only; it does not prove that UAA-generated files load or enforce permissions in each runtime.
 
+Current local evidence remains format-level and offline: generated artifacts pass target validators,
+fixtures and security regression tests, but no target runtime is upgraded to `verified` without an
+independent runtime-specific evidence record. The offline test suite does not require Codex CLI or
+any other target CLI.
+
 ## Current Codex evidence
 
 The prototype now validates the documented file shapes for `AGENTS.md`, Agent Skills and project-scoped

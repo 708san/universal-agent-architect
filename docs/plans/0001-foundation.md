@@ -1,6 +1,6 @@
 # Plan 0001 — Offline-first foundation
 
-Status: local baseline tests and GitHub CI confirmed; P0 hardening remains only for external issue setup and prototype limitations. Updated: 2026-10-30.
+Status: local foundation complete; external issue/settings setup and target runtime evidence remain open. Updated: 2026-11-01.
 
 ## Outcome
 Reproducible minimal core working in Node CLI and static browser, with no cloud dependencies. Codex can begin from existing instructions and issues.
@@ -13,11 +13,11 @@ Reproducible minimal core working in Node CLI and static browser, with no cloud 
 - Bounded input warnings, browser/CLI relative-path normalization coverage, and golden fixture integration tests.
 
 ## Remaining before closing P0
-- Complete scanner edge-case coverage, including root scope and input-boundary behavior.
-- Add automated static-hosting/CSP/no-outgoing-request checks.
-- Review CI to use the committed lockfile reproducibly.
-- Browser ZIP import/export remains P1 per the roadmap; this P0 plan only verifies the static browser boundary.
-- GitHub issue creation and repository security settings remain external Web actions.
+- Create or update GitHub issues and verify repository security settings through the external Web UI.
+
+The local P0 implementation is complete: scanner edge cases, static-hosting/CSP/no-outgoing-request
+checks, lockfile-based CI, browser ZIP import/export and CLI/browser convergence are covered by the
+current test suite. Target runtime loading remains a P1 compatibility-evidence task.
 
 ## Risks
 - Metadata/folder names may contain secrets and can leak if later returned to cloud AI.
@@ -25,7 +25,7 @@ Reproducible minimal core working in Node CLI and static browser, with no cloud 
 - Codex-specific output is only partially verified; other targets are explicitly unsupported.
 
 ## Verification
-- `npm run check` passes locally with 26 tests, the skill checker and the capability-registry checker.
+- `npm run check` passes locally with 73 tests, the skill checker, capability-registry checker and target snapshot checker.
 - GitHub Actions `CI` succeeded for the pushed `main` commit.
 - `node scripts/cli.mjs analyze examples/sample-python` produces no raw secret contents.
 - `node scripts/cli.mjs generate examples/sample-python codex` stages outputs without changing the source.
