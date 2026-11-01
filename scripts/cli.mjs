@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analyzeProject, proposeBlueprint, generateArtifacts, validateArtifacts, safeRelativePath, findOutputCollisions, findOutputConflicts, findOutputChanges } from '../dist/core.js';
+import { normalizeProjectRequirements } from '../dist/requirements.js';
 import { analyzeAstSources } from '../dist/ast-analyzer.js';
 import { inspectExistingCodexConfig } from '../dist/existing-config.js';
 import { createApplyPlan, createRollbackRecord } from '../dist/apply.js';
@@ -20,6 +21,7 @@ const AST_MAX_FILES = 100;
 const AST_MAX_FILE_BYTES = 512_000;
 const AST_MAX_TOTAL_BYTES = 5 * 1024 * 1024;
 const CONFIG_MAX_FILE_BYTES = 100_000;
+const REQUIREMENTS_MAX_BYTES = 32_000;
 const astAssets = {
   runtimeWasm: fileURLToPath(new URL('../node_modules/web-tree-sitter/web-tree-sitter.wasm', import.meta.url)),
   pythonWasm: fileURLToPath(new URL('../node_modules/tree-sitter-python/tree-sitter-python.wasm', import.meta.url)),
@@ -32,6 +34,24 @@ const isMcpConfigPath = relativePath => relativePath === '.mcp.json' || relative
 
 function optionValue(options, prefix) {
   return options.find(option => option.startsWith(`${prefix}=`))?.slice(prefix.length + 1);
+}
+
+async function readBoundedStream(stream, maxBytes) {
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of stream) {
+    total += chunk.byteLength;
+    if (total > maxBytes) throw new Error('Requirements input exceeds the size limit.');
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+async function loadRequirementsFromStdin() {
+  let value;
+  try { value = JSON.parse(await readBoundedStream(process.stdin, REQUIREMENTS_MAX_BYTES)); }
+  catch (error) { throw new Error(error instanceof SyntaxError ? 'Requirements input must be valid JSON.' : error.message); }
+  return normalizeProjectRequirements(value);
 }
 
 function isWithin(parent, child) {
@@ -288,38 +308,41 @@ async function main() {
   const includeAst = options.includes('--ast');
   const includeConfig = options.includes('--config') || (dryRun && command === 'generate');
   const includeMcpConfig = options.includes('--mcp-config');
+  const requirementsStdin = options.includes('--requirements-stdin');
   const confirm = options.includes('--confirm');
   const stagingArgument = optionValue(options, '--staging');
   const rollbackId = optionValue(options, '--rollback-id');
   if (command !== 'analyze' && command !== 'generate') {
     if (command !== 'apply' && command !== 'rollback') {
-      console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run] [--ast] [--config] [--mcp-config]\n       node scripts/cli.mjs apply <project-dir> --staging=generated/project [--confirm]\n       node scripts/cli.mjs rollback <project-dir> --staging=generated/project --rollback-id=<id> [--confirm]');
+      console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run] [--ast] [--config] [--mcp-config] [--requirements-stdin]\n       node scripts/cli.mjs apply <project-dir> --staging=generated/project [--confirm]\n       node scripts/cli.mjs rollback <project-dir> --staging=generated/project --rollback-id=<id> [--confirm]');
       return;
     }
   }
-  const knownOptions = ['--dry-run', '--ast', '--config', '--mcp-config', '--confirm'];
+  const knownOptions = ['--dry-run', '--ast', '--config', '--mcp-config', '--confirm', '--requirements-stdin'];
   if (options.some(option => !knownOptions.includes(option) && !option.startsWith('--staging=') && !option.startsWith('--rollback-id='))) throw new Error('Unsupported CLI option.');
   if (command === 'apply') {
-    if (!stagingArgument || dryRun || includeAst || includeConfig || includeMcpConfig || rollbackId) throw new Error('Apply requires only --staging and optional --confirm.');
+    if (!stagingArgument || dryRun || includeAst || includeConfig || includeMcpConfig || requirementsStdin || rollbackId) throw new Error('Apply requires only --staging and optional --confirm.');
     await applyStaged(folder, stagingArgument, confirm);
     return;
   }
   if (command === 'rollback') {
-    if (!stagingArgument || dryRun || includeAst || includeConfig || includeMcpConfig) throw new Error('Rollback requires --staging and --rollback-id.');
+    if (!stagingArgument || dryRun || includeAst || includeConfig || includeMcpConfig || requirementsStdin) throw new Error('Rollback requires --staging and --rollback-id.');
     await rollbackStaged(folder, stagingArgument, rollbackId, confirm);
     return;
   }
   if (confirm || stagingArgument || rollbackId) throw new Error('Apply/rollback options are only available for apply or rollback.');
   if (includeMcpConfig && command !== 'analyze') throw new Error('The --mcp-config option is only available for analyze.');
+  if (requirementsStdin && command !== 'analyze' && command !== 'generate') throw new Error('The --requirements-stdin option is only available for analyze or generate.');
   if (dryRun && command !== 'generate') throw new Error('The --dry-run option is only available for generate.');
   if (includeAst && command !== 'analyze') throw new Error('The --ast option is only available for analyze.');
   if (options.includes('--config') && command !== 'analyze' && !dryRun) throw new Error('The --config option is only available for analyze or generate dry-run.');
   if (securityProfile !== 'baseline' && securityProfile !== 'strict') throw new Error('Security profile must be baseline or strict');
   const abs = path.resolve(folder);
   if (!(await lstat(abs)).isDirectory()) throw new Error('Expected a directory');
+  const requirements = requirementsStdin ? await loadRequirementsFromStdin() : undefined;
   const input = await scan(abs, { includeAst, includeConfig, includeMcpConfig });
   const facts = analyzeProject(input);
-  const blueprint = proposeBlueprint(facts, { target, workType: 'coding', needsReview: true, securityProfile });
+  const blueprint = proposeBlueprint(facts, { target, workType: 'coding', needsReview: true, securityProfile, requirements });
   if (command === 'analyze') {
     const ast = includeAst ? await analyzeAstSources(input.astSources, { assets: astAssets }) : undefined;
     const existingConfig = includeConfig ? inspectExistingCodexConfig(input.configSources) : undefined;

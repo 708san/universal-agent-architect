@@ -56,6 +56,12 @@ build and served only through an explicit static allowlist.
 
 Core receives only `paths` and known allowlisted manifest strings, not path handles or network clients. It must never import Node filesystem APIs, HTTP libraries, cloud SDKs or subprocess modules. This supports reuse between browser and local CLI and is testable offline.
 
+Structured project requirements are represented by `ProjectRequirements` in `src/requirements.ts`.
+They are bounded user context (`goal`, `constraints`, `requiredChecks`) with `allowNetwork` fixed to
+`false` in the offline core. The browser, CLI stdin and local MCP proposal path use the same shape.
+Requirement text is flattened before rendering and cannot grant filesystem, process, network or MCP
+permissions; security and approval requirements remain authoritative.
+
 ## Future modular architecture
 
 ```text

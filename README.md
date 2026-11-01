@@ -15,6 +15,7 @@ node scripts/cli.mjs analyze ./examples/sample-python
 node scripts/cli.mjs analyze ./examples/sample-python codex baseline --ast
 node scripts/cli.mjs analyze ./examples/sample-python codex baseline --config
 node scripts/cli.mjs analyze ./examples/sample-python codex baseline --mcp-config
+printf '%s' '{"goal":"安全なPython開発エージェントを作る","constraints":["外部APIを使わない"],"requiredChecks":["test","security"],"allowNetwork":false}' | node scripts/cli.mjs analyze ./examples/sample-python codex baseline --requirements-stdin
 node scripts/cli.mjs generate ./examples/sample-python codex baseline --dry-run
 node scripts/cli.mjs generate ./examples/sample-python codex
 node scripts/cli.mjs generate ./examples/sample-python claude-code baseline --dry-run
@@ -30,6 +31,9 @@ npm run build && npm run pages
 ```
 
 CLIの4番目の引数で`baseline`（標準）または`strict`（強化）のセキュリティプロファイルを選べます。
+構造化した要件は`--requirements-stdin`でJSONとして渡せます。要件は目的・制約・必要検査の
+参考情報であり、ネットワークや書き込みなどの権限を付与できません。MCPの`propose_blueprint`
+からも同じ形式を渡せます。
 
 ```bash
 node scripts/cli.mjs analyze ./examples/sample-python codex strict
@@ -82,6 +86,6 @@ gh repo create universal-agent-architect --private --source=. --remote=origin --
 
 ## スコープ外（現時点）
 
-プロジェクトの任意コードの実行、外部MCPサーバの自動起動、AIモデルの自動ダウンロード、完全な静的構文解析、AIによる自然言語要件の自動理解、複数サービスのネイティブ設定生成、ゼロ保持を保証するクラウドAI接続。
+プロジェクトの任意コードの実行、外部MCPサーバの自動起動、AIモデルの自動ダウンロード、完全な静的構文解析、AIによる自然言語要件の自動理解、複数サービスのネイティブ設定生成、ゼロ保持を保証するクラウドAI接続。現在の要件入力は構造化JSONであり、自然言語を自律的に解釈する機能ではありません。
 
 ライセンスは公開方針を決定してから追加します（現時点では未選択）。

@@ -15,6 +15,9 @@ test('browser UI follows the local, readable and bounded design baseline', async
   assert.match(html, /<legend/);
   assert.match(html, /role="status"/);
   assert.match(html, /aria-live="polite"/);
+  assert.match(html, /id="goal"/);
+  assert.match(html, /id="constraints"/);
+  assert.match(html, /name="required-check"/);
   assert.match(styles, /font-family:\s*"BIZ UDPGothic".*"Noto Sans JP".*Meiryo.*system-ui/s);
   assert.match(styles, /font-size:\s*16px/);
   assert.match(styles, /line-height:\s*1\.6/);

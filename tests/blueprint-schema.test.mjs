@@ -19,13 +19,14 @@ test('Blueprint 0.1 schema covers the emitted deterministic shape', () => {
 
   assert.equal(schema.$id, 'https://github.com/708san/universal-agent-architect/schema/blueprint-0.1.json');
   assert.deepEqual(schema.required, [
-    'schemaVersion', 'target', 'workType', 'targetEdition', 'targetVersion', 'provenance', 'agents', 'skills', 'reasons', 'warnings', 'security',
+    'schemaVersion', 'target', 'workType', 'targetEdition', 'targetVersion', 'provenance', 'requirements', 'agents', 'skills', 'reasons', 'warnings', 'security',
   ]);
   assert.equal(blueprint.schemaVersion, schema.properties.schemaVersion.const);
   assert.ok(schema.properties.target.enum.includes(blueprint.target));
   assert.equal(blueprint.workType, schema.properties.workType.const);
   assert.equal(blueprint.provenance.registryVersion, schema.$defs.provenance.properties.registryVersion.const);
   assert.equal(blueprint.provenance.verificationStatus, 'partial');
+  assert.equal(blueprint.requirements.allowNetwork, false);
   assert.ok(blueprint.agents.length >= 1);
   assert.equal(blueprint.security.network, schema.$defs.securityRequirements.properties.network.const);
   assert.equal(blueprint.security.runGeneratedScripts, false);

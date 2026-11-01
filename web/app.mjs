@@ -12,6 +12,15 @@ function setStatus(message, state = 'idle') {
   status.dataset.state = state;
 }
 
+function collectRequirements() {
+  return {
+    goal: $('goal').value,
+    constraints: $('constraints').value.split('\n').map(value => value.trim()).filter(Boolean),
+    requiredChecks: [...document.querySelectorAll('input[name="required-check"]:checked')].map(input => input.value),
+    allowNetwork: false,
+  };
+}
+
 for (const id of ['files', 'files-fallback', 'zip']) {
   $(id).addEventListener('change', () => {
     const selected = [
@@ -43,7 +52,7 @@ $('run').addEventListener('click', async () => {
     const input = await collectBrowserInput(entries);
     const astSelection = $('ast').checked ? await collectBrowserAstSources(entries) : null;
     const facts = analyzeProject(input);
-    const blueprint = proposeBlueprint(facts, { target: $('target').value, workType: 'coding', needsReview: $('review').checked, securityProfile: $('security').value });
+    const blueprint = proposeBlueprint(facts, { target: $('target').value, workType: 'coding', needsReview: $('review').checked, securityProfile: $('security').value, requirements: collectRequirements() });
     const rendered = generateArtifacts(blueprint);
     lastArtifacts = rendered.supported ? rendered.files : [];
     $('export').disabled = !lastArtifacts.length;

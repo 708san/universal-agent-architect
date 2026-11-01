@@ -64,6 +64,20 @@ test('MCP stdio exposes only bounded read-only tools and redacts project content
 
       const invalid = await server.request(5, 'tools/call', { name: 'propose_blueprint', arguments: { target: '/etc/passwd' } });
       assert.ok(invalid.error || invalid.result?.isError);
+      const proposed = await server.request(6, 'tools/call', { name: 'propose_blueprint', arguments: {
+        target: 'codex',
+        securityProfile: 'strict',
+        requirements: {
+          goal: 'Build a safe local agent',
+          constraints: ['No external API'],
+          requiredChecks: ['security'],
+          allowNetwork: false,
+        },
+      } });
+      const proposedText = proposed.result.content[0].text;
+      const proposedValue = JSON.parse(proposedText);
+      assert.equal(proposedValue.blueprint.requirements.goal, 'Build a safe local agent');
+      assert.ok(proposedValue.blueprint.skills.some(skill => skill.id === 'security-verification'));
       assert.equal(await readFile(path.join(temp, 'marker.txt'), 'utf8'), 'unchanged');
       assert.ok(server.stdoutLines.every(line => JSON.parse(line).jsonrpc === '2.0'));
     } finally {
