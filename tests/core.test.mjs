@@ -181,6 +181,22 @@ test('Skill frontmatter injection fails closed before rendering', () => {
   }
 });
 
+test('duplicate Skill IDs fail closed before rendering', () => {
+  const facts = analyzeProject({ paths: [] });
+  const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });
+  const invalid = {
+    ...blueprint,
+    skills: [
+      { id: 'code-review', purpose: 'Review the requested change.' },
+      { id: 'code-review', purpose: 'Review the requested change again.' },
+    ],
+  };
+  assert.ok(validateBlueprint(invalid).some(problem => problem.includes('Duplicate skill ID')));
+  const result = generateArtifacts(invalid);
+  assert.equal(result.supported, false);
+  assert.deepEqual(result.files, []);
+});
+
 test('single agent default and review skill generation', () => {
   const facts=analyzeProject({paths:['src/app.ts','tests/app.test.ts']});
   const p=proposeBlueprint(facts,{target:'codex',workType:'coding',needsReview:true});
