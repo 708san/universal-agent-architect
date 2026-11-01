@@ -55,7 +55,7 @@ materials. See `docs/AGENT_DEVELOPMENT_STANDARD.md` for the development lifecycl
 - The static prototype demonstrates local execution, not verified end-to-end protection against hostile browser extensions, compromised dependencies or system-level exfiltration.
 
 ## Tests required
-Traversal, symlink escape, output collision, oversized manifest, malformed package.json, injected instruction text, malicious skill scripts, unsupported target, default no-network browser policy, redacted MCP output, user approval gates.
+Traversal, symlink escape, output collision, oversized manifest, malformed package.json, injected instruction text, generated Skill frontmatter injection, malicious skill scripts, unsupported target, default no-network browser policy, redacted MCP output, user approval gates.
 
 ## Disclosure
 Before publishing the repo, choose a maintainer security contact and add a private vulnerability report process. Do not post secrets in public issues.

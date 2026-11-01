@@ -163,6 +163,24 @@ test('malformed Blueprints fail closed before rendering', () => {
   assert.equal(result.supported, false);
   assert.match(result.reason, /at least one agent/);
 });
+
+test('Skill frontmatter injection fails closed before rendering', () => {
+  const facts = analyzeProject({ paths: [] });
+  const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });
+  for (const purpose of [
+    'safe description\nname: attacker',
+    'safe description\r---',
+    `safe description\u0000`,
+    'x'.repeat(1_025),
+  ]) {
+    const invalid = { ...blueprint, skills: [{ id: 'code-review', purpose }] };
+    assert.ok(validateBlueprint(invalid).some(problem => problem.includes('Invalid skill')));
+    const result = generateArtifacts(invalid);
+    assert.equal(result.supported, false);
+    assert.deepEqual(result.files, []);
+  }
+});
+
 test('single agent default and review skill generation', () => {
   const facts=analyzeProject({paths:['src/app.ts','tests/app.test.ts']});
   const p=proposeBlueprint(facts,{target:'codex',workType:'coding',needsReview:true});

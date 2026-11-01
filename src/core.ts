@@ -102,6 +102,7 @@ const forbiddenParts = new Set([
 const allowedManifests = new Set(['package.json', 'pyproject.toml', 'requirements.txt']);
 const MAX_MANIFEST_BYTES = 100_000;
 const MAX_INPUT_PATHS = 5_000;
+const MAX_SKILL_PURPOSE_LENGTH = 1_024;
 const BASELINE_SECURITY_TESTS: SecurityCheck[] = [
   'path-traversal', 'symlink-escape', 'secret-nondisclosure', 'malformed-input',
   'unsupported-target', 'output-collision', 'no-network',
@@ -137,6 +138,12 @@ function isSkillName(value: unknown): value is string {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
+}
+
+function isSafeSingleLineText(value: unknown, maxLength: number): value is string {
+  return isNonEmptyString(value)
+    && value.length <= maxLength
+    && !/[\u0000-\u001f\u007f]/.test(value);
 }
 
 function unknownKeys(value: Record<string, unknown>, allowed: string[], label: string): string[] {
@@ -263,7 +270,7 @@ export function validateBlueprint(value: unknown): string[] {
   }
   if (Array.isArray(value.skills)) {
     value.skills.forEach((skill, index) => {
-      if (!isRecord(skill) || !isSkillName(skill.id) || !isNonEmptyString(skill.purpose)) {
+      if (!isRecord(skill) || !isSkillName(skill.id) || !isSafeSingleLineText(skill.purpose, MAX_SKILL_PURPOSE_LENGTH)) {
         problems.push(`Invalid skill at index ${index}.`);
       } else {
         problems.push(...unknownKeys(skill, ['id', 'purpose'], `Skill at index ${index}`));
