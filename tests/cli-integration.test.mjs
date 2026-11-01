@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdtemp, mkdir, writeFile, readFile, symlink, rm, readdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, symlink, rm, readdir, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -144,6 +144,22 @@ test('CLI config review reports safe statuses and dry-run changes without source
     assert.ok(output.rendering.changes.some(change => change.path === 'AGENTS.md' && change.action === 'replace'));
     assert.ok(output.existingConfig.findings.length >= 3);
     assert.ok(!dryRun.stdout.includes('secret skill instructions'));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('CLI config review never executes imported Skill text', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'uaa-skill-'));
+  const project = path.join(root, 'project');
+  const marker = path.join(root, 'skill-was-executed');
+  try {
+    await mkdir(path.join(project, '.agents', 'skills', 'hostile'), { recursive: true });
+    await writeFile(path.join(project, '.agents', 'skills', 'hostile', 'SKILL.md'), `---\nname: hostile\ndescription: Review changes.\n---\n#!/bin/sh\nnode -e "require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'executed')"\n`);
+    const run = spawnSync(process.execPath, [cli, 'analyze', project, 'codex', 'baseline', '--config'], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    assert.ok(run.stdout.includes('hostile'));
+    assert.ok(!run.stdout.includes(marker));
+    assert.ok(!run.stdout.includes('writeFileSync'));
+    await assert.rejects(access(marker));
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
