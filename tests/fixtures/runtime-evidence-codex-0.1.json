@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "0.1",
+  "target": "codex",
+  "edition": "CLI/IDE",
+  "version": "unknown",
+  "verifiedAt": "2026-11-01",
+  "overallStatus": "partial",
+  "reviewStatus": "unreviewed",
+  "capabilities": {
+    "instructions": "format-verified",
+    "skills": "format-verified",
+    "subagents": "format-verified",
+    "mcp": "not-tested",
+    "permissions": "not-tested"
+  },
+  "evidenceIds": ["codex-adapter-0-1"],
+  "limitations": [
+    "Runtime loading, permission enforcement and MCP behavior were not tested."
+  ]
+}

@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-ast-assets.mjs",
     "test": "npm run build && node --test tests/*.test.mjs",
-    "check": "npm run test && node scripts/check-skills.mjs && node scripts/check-capability-registry.mjs && node scripts/check-target-snapshots.mjs",
+    "check": "npm run test && node scripts/check-skills.mjs && node scripts/check-capability-registry.mjs && node scripts/check-target-snapshots.mjs && node scripts/check-runtime-evidence.mjs",
     "pages": "node scripts/build-pages.mjs",
     "spec-refresh": "node scripts/spec-refresh.mjs",
     "plan": "node scripts/cli.mjs",
