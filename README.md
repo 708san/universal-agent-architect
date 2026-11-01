@@ -22,6 +22,8 @@ node scripts/cli.mjs generate ./examples/sample-python claude-code baseline --dr
 node scripts/cli.mjs generate ./examples/sample-python gemini-cli baseline --dry-run
 node scripts/cli.mjs generate ./examples/sample-python antigravity baseline --dry-run
 node scripts/cli.mjs generate ./examples/sample-python chatgpt baseline --dry-run
+node scripts/spec-refresh.mjs validate --candidate=path/to/capability-update-candidate.json
+node scripts/spec-refresh.mjs diff --candidate=path/to/capability-update-candidate.json
 node scripts/cli.mjs apply ./examples/sample-python --staging=generated/sample-python --confirm
 # rollback-idはapplyのJSON結果から取得する
 node scripts/cli.mjs rollback ./examples/sample-python --staging=generated/sample-python --rollback-id=<id> --confirm
@@ -44,6 +46,10 @@ node scripts/cli.mjs analyze ./examples/sample-python codex strict
 GitHub Pages用の静的配布物は`npm run build && npm run pages`で`.pages/`へ作成します。GitHub WebのSettings → Pages → SourceでGitHub Actionsを選択すると、`main`へのマージ後に`.github/workflows/pages.yml`が公開します。ページは静的・ローカル解析専用で、バックエンドや外部APIはありません。
 
 `generate` は既存プロジェクトを書き換えず、`generated/<folder>/` に新しい設定ファイルを出力します。同一出力先が存在すると失敗します。`generated/` 内のファイルを確認してから、ご自身で適用してください。
+
+仕様更新はオフラインの候補ファイルを対象に行います。`spec-refresh diff` は差分を表示するだけで、
+有効なRegistryを変更しません。確認済み候補を反映する場合だけ`apply --confirm`を指定します。
+オンラインの公式資料取得は未実装で、ネットワークなしでも通常の解析・生成は利用できます。
 
 ## 採用する設計原則
 

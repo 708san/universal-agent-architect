@@ -34,6 +34,9 @@ test('Codex adapter output matches the reviewed offline format fixture', () => {
   const subagent = result.files.find(file => file.path.startsWith('.codex/agents/'));
   assert.ok(subagent);
   for (const key of fixture.formats.subagentRequiredKeys) assert.match(subagent.content, new RegExp(`^${key}\\s*=`, 'm'));
+  for (const flag of ['shell_tool', 'apps', 'plugins', 'memories', 'request_permissions_tool']) {
+    assert.match(subagent.content, new RegExp(`^features\\.${flag} = false$`, 'm'));
+  }
   assert.equal(fixture.runtimeEvidence, 'not-tested');
 });
 

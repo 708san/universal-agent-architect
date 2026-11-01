@@ -8,7 +8,7 @@ CLI (Node filesystem)       Browser (File API)
           -> ProjectInput -> pure core (src/core.ts)
                                | analyzeProject
                                | proposeBlueprint
-                               | generateArtifacts [Codex only]
+                               | generateArtifacts [format-level target adapters]
                                | validateArtifacts
                                v
                       generated artifacts (staging)
@@ -62,6 +62,11 @@ They are bounded user context (`goal`, `constraints`, `requiredChecks`) with `al
 Requirement text is flattened before rendering and cannot grant filesystem, process, network or MCP
 permissions; security and approval requirements remain authoritative.
 
+Project check planning is deterministic. `analyzeProject` records only bounded signals for test,
+dependency, build, lint and typecheck checks in `ProjectFacts.detectedChecks`. The planner emits a
+verification Skill only when a check is detected locally or explicitly requested. A requested check
+without a local signal is reported as guidance, not proof that the command exists.
+
 ## Future modular architecture
 
 ```text
@@ -77,6 +82,12 @@ apps/{web,cli,desktop,mcp}
 capability-registry <--- official docs updater + human-reviewed fixtures
  task-packs/coding <--- templates + deterministic recommendations
 ```
+
+The first specification-update workflow is local-only. `scripts/spec-refresh.mjs` accepts an explicit
+JSON candidate, validates allowlisted official source hosts and existing fixture references, and
+prints metadata-only diffs. `apply --confirm` is the only activation path; normal UAA analysis never
+contacts the network and never reads candidate text as instructions. Online document retrieval and
+automatic fixture generation remain future work.
 
 ## Core API (implemented in `src/core.ts`)
 - `analyzeProject(ProjectInput): ProjectFacts`

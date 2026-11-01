@@ -55,6 +55,8 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [ ] Optional local model connector behind an outbound isolation boundary.
 - [ ] Cloud provider connectors with data minimization, preview and consent.
 - [ ] Specification registry update checker and candidate-diff workflow.
+  - [x] Local candidate validation, metadata-only diff and explicit activation gate.
+  - [ ] Explicit online retrieval from allowlisted official documentation with reviewable evidence.
 - [ ] Threat tests for secrets, prompt injection, malicious manifests, remote data return.
 
 **Exit:** online modes are opt-in; the core remains usable with network disabled.

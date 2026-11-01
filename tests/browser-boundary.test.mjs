@@ -43,6 +43,9 @@ test('static browser boundary is local-only and allowlisted', async () => {
   for (const id of ['files', 'files-fallback', 'zip', 'target', 'security', 'goal', 'constraints', 'ast', 'review', 'run', 'export', 'status', 'output']) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
+  for (const check of ['test', 'security', 'dependency', 'build', 'lint', 'typecheck']) {
+    assert.match(html, new RegExp(`value="${check}"`));
+  }
   assert.match(html, /ローカルでプロジェクトの構成を確認し/);
   assert.match(html, /解析結果はここに表示されます/);
   for (const api of ['fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon']) assert.doesNotMatch(html, new RegExp(api.replace('(', '\\(')));

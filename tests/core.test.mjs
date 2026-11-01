@@ -103,6 +103,23 @@ test('structured project requirements fail closed for network enablement and ove
   }), /bounded string/);
 });
 
+test('planner selects only detected or explicitly requested project checks', () => {
+  const facts = analyzeProject({
+    paths: ['package.json', 'src/app.ts'],
+    manifests: { 'package.json': JSON.stringify({ scripts: { build: 'tsc', lint: 'eslint .', typecheck: 'tsc --noEmit' } }) },
+  });
+  assert.deepEqual(facts.detectedChecks, ['dependency', 'build', 'lint', 'typecheck']);
+  const blueprint = proposeBlueprint(facts, {
+    target: 'codex',
+    workType: 'coding',
+    requirements: { goal: '', constraints: [], requiredChecks: ['test'], allowNetwork: false },
+  });
+  assert.deepEqual(blueprint.skills.map(skill => skill.id), [
+    'test-verification', 'dependency-verification', 'build-verification', 'lint-verification', 'typecheck-verification',
+  ]);
+  assert.ok(blueprint.warnings.some(warning => warning.includes('Requested test check has no detected local signal')));
+});
+
 test('invalid security requirements fail closed during artifact generation', () => {
   const facts = analyzeProject({ paths: [] });
   const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });
