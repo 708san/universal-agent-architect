@@ -18,7 +18,7 @@
     "request": { "target": "codex", "workType": "coding", "needsReview": true },
     "expected": {
       "agentIds": ["main"],
-      "skillIds": ["code-review", "test-verification"],
+      "skillIds": ["code-review", "test-verification", "dependency-verification"],
       "reasons": ["Review requested", "Reuse existing test infrastructure"]
     }
   },
@@ -35,7 +35,7 @@
     "request": { "target": "codex", "workType": "coding", "needsReview": true, "independentWorkstreams": 3, "securityProfile": "strict" },
     "expected": {
       "agentIds": ["main", "reviewer"],
-      "skillIds": ["code-review", "test-verification", "security-verification"],
+      "skillIds": ["code-review", "test-verification", "dependency-verification", "security-verification"],
       "reasons": ["Review requested", "Reuse existing test infrastructure", "Multiple independent workstreams", "Existing instructions or skills detected", "Strict profile requested"]
     }
   }

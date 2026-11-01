@@ -2,5 +2,6 @@
 # Codex only uses project config where the project is trusted.
 [agents]
 enabled = true
+# Bound independent reviewers; the parent session still controls approvals and sandboxing.
 max_concurrent_threads_per_session = 3
 # No network MCP configured by default: offline-first policy.

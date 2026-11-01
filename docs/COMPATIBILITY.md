@@ -6,7 +6,13 @@ It is a reviewed snapshot, not an automatic claim of latest support. `verified` 
 must include an official source URL and a local fixture; `planned` and `unknown` entries must not be
 rendered as supported.
 
-Checked: 2026-10-30. **Supported in core** != **planned target**. Product and subscription differences must be recorded.
+Checked: 2026-11-01. **Supported in core** != **planned target**. Product and subscription differences must be recorded.
+
+The 2026-11-01 refresh checked the current official Codex `AGENTS.md`, custom-agent and Skills
+documentation, the Agent Skills specification, Claude Code memory/Skills/subagent documentation,
+Gemini CLI Skills/subagent documentation, Google Antigravity rules/Skills/subagent documentation,
+and OpenAI portable plugin documentation. This confirms documented file formats and discovery
+guidance only; it does not prove that UAA-generated files load or enforce permissions in each runtime.
 
 ## Current Codex evidence
 
@@ -56,6 +62,22 @@ it does not verify Codex's native MCP discovery or permission behavior.
 - Antigravity rules: https://antigravity.google/docs/rules/
 - Antigravity Agent Skills: https://antigravity.google/docs/skills
 - Antigravity custom subagents: https://antigravity.google/docs/subagents?tab=cli
+
+## Update workflow
+
+Create a local candidate from reviewed official evidence and compare it before activation:
+
+```bash
+node scripts/spec-refresh.mjs validate --candidate=path/to/candidate.json
+node scripts/spec-refresh.mjs diff --candidate=path/to/candidate.json
+node scripts/spec-refresh.mjs apply --candidate=path/to/candidate.json --confirm
+```
+
+The candidate must use the versioned envelope in
+[`capability-update-candidate-0.1.schema.json`](../schemas/capability-update-candidate-0.1.schema.json).
+The first two commands do not modify the active registry. Activation also updates the local target
+snapshot dates/status metadata. Human review, fixture changes and runtime tests remain required before
+changing an entry to `verified`.
 
 ## Version policy
 Record target, UI/CLI edition, version, official URL, date checked, supported/unknown/unsupported/experimental status and test fixture in each capability snapshot. Do not auto-replace reviewed snapshots with untrusted web content.

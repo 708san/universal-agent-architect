@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/708san/universal-agent-architect/schema/capability-update-candidate-0.1.json",
+  "title": "Universal Agent Architect Capability Update Candidate 0.1",
+  "description": "A reviewed, local candidate registry. It is not active until explicitly validated and approved.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidateVersion", "createdAt", "registry"],
+  "properties": {
+    "candidateVersion": { "const": "0.1" },
+    "createdAt": { "type": "string", "format": "date" },
+    "registry": { "$ref": "capability-registry-0.1.schema.json" }
+  }
+}

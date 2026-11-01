@@ -17,3 +17,6 @@ Create these as separate GitHub issues after the repository is published. Each i
 ## P2
 9. **stdio MCP server** — Read-only list_capabilities/analyze_project/propose_blueprint with redacted responses. Acceptance: local MCP inspector test and data-flow threat checks.
 10. **Per-service adapters** — Claude Code, Gemini CLI, Antigravity, ChatGPT as independent verified issues. Acceptance: no unsupported feature claims. **Implemented at format level; runtime behavior remains separately unverified.**
+
+## P3
+11. **Online specification refresh** — Add an explicit, allowlisted documentation retrieval mode that produces the same local candidate/diff format without auto-activation. Acceptance: retrieved text is treated as untrusted data, source/version/date are recorded, fixtures are reviewed, and offline mode remains unchanged.
