@@ -48,7 +48,10 @@ legend, .section-title { margin-bottom: .7rem; font-size: 1.15rem; font-weight: 
 input[type="file"] { width: 100%; font-size: .88rem; }
 .options-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .control { display: flex; flex-direction: column; gap: .35rem; font-weight: 650; }
-select { width: 100%; padding: .6rem .7rem; border: 1px solid var(--ui-control-border); border-radius: 8px; background: var(--ui-surface); font: inherit; }
+select, textarea { width: 100%; padding: .6rem .7rem; border: 1px solid var(--ui-control-border); border-radius: 8px; background: var(--ui-surface); font: inherit; }
+textarea { min-height: 5rem; resize: vertical; }
+.requirements-grid { display: grid; gap: 1rem; margin-top: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.requirements-help { margin: .15rem 0 0; color: var(--ui-muted); font-size: .86rem; font-weight: 400; }
 .checks { display: grid; gap: .65rem; margin-top: 1.15rem; }
 .check { display: flex; align-items: flex-start; gap: .55rem; font-weight: 600; }
 .check input { width: 1.1rem; height: 1.1rem; margin-top: .25rem; accent-color: var(--ui-primary); }
@@ -121,6 +124,22 @@ pre { max-height: 32rem; margin: 0; overflow: auto; padding: 1rem; border-radius
           <option value="strict">strict（強化）</option>
         </select>
       </label>
+    </div>
+    <div class="requirements-grid">
+      <label class="control" for="goal">プロジェクトの目的
+        <textarea id="goal" maxlength="500" placeholder="例：安全なPython開発用エージェントを作る"></textarea>
+        <small class="requirements-help">要件は参考情報として扱い、権限やセキュリティ設定を変更しません。</small>
+      </label>
+      <label class="control" for="constraints">制約（1行1件）
+        <textarea id="constraints" maxlength="3000" placeholder="例：外部APIを使わない&#10;例：変更前にテストを実行する"></textarea>
+        <small class="requirements-help">最大10件。秘密情報や認証情報は入力しないでください。</small>
+      </label>
+    </div>
+    <div class="checks" aria-label="必要な検査">
+      <span class="control">必要な検査</span>
+      <label class="check"><input type="checkbox" name="required-check" value="test"> <span>テスト</span></label>
+      <label class="check"><input type="checkbox" name="required-check" value="security"> <span>セキュリティ</span></label>
+      <label class="check"><input type="checkbox" name="required-check" value="dependency"> <span>依存関係</span></label>
     </div>
     <div class="checks">
       <label class="check"><input id="ast" type="checkbox"> <span>ローカルAST解析を有効化<br><small>Python / TypeScript。明示的に選択した場合のみ実行します。</small></span></label>

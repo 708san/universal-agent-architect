@@ -26,6 +26,8 @@ Analyze explicitly selected local project metadata, choose the smallest effectiv
 - FR-01 Analyze bounded directory structure and allowlisted manifests; no execution.
 - FR-02 Detect existing instructions/skills/settings and identify overlaps with evidence.
 - FR-03 Rule-based blueprint generation; explain every decision, show alternatives, prefer minimal agents.
+- FR-03a Accept bounded structured project requirements (goal, constraints, required checks) without
+  turning them into permissions or executable instructions.
 - FR-04 Target adapter rendering with explicit unsupported/unknown state.
 - FR-05 Validate paths, format, supported features and security before generating.
 - FR-06 Stage outputs and diff before explicit application; rollback after application.

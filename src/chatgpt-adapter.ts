@@ -1,4 +1,5 @@
 import type { Blueprint, GeneratedArtifact } from './core.js';
+import { formatProjectRequirements } from './requirements.js';
 
 export const CHATGPT_SOURCE_URLS = [
   'https://developers.openai.com/plugins/build/plugins',
@@ -37,8 +38,12 @@ export function renderChatgptArtifacts(blueprint: Blueprint): GeneratedArtifact[
       content: skillMarkdown(skill.id, skill.purpose),
     }))
     : [{ path: 'skills/project-workflow/SKILL.md', content: defaultSkillMarkdown() }];
+  const requirementContext = formatProjectRequirements(blueprint.requirements);
+  const renderedSkills = skills.map(skill => requirementContext
+    ? { ...skill, content: `${skill.content}\n${requirementContext}\n` }
+    : skill);
   return [
     { path: 'plugin.json', content: `${JSON.stringify(pluginManifest, null, 2)}\n` },
-    ...skills,
+    ...renderedSkills,
   ];
 }

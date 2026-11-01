@@ -11,7 +11,7 @@ MCP = Model Context Protocol, a standard interface for connecting tools to an AI
 |---|---|---|---|
 | `list_capabilities` | target name | verified capability names, versions, sources | read |
 | `analyze_project` | allowlisted local root, scan profile | summarized facts without filenames/raw source unless explicitly requested | read-local |
-| `propose_blueprint` | facts reference, goal, target | explanation + versioned Blueprint | compute |
+| `propose_blueprint` | fixed project, bounded requirements (`goal`, `constraints`, `requiredChecks`), target | explanation + versioned Blueprint | compute |
 | `validate_artifacts` | staged artifact ids | relative paths + non-sensitive findings | read-stage |
 | `generate_artifacts` | approved blueprint id | staged artifact ids and preview | write-stage |
 | `apply_configuration` | staged artifact ids, explicit confirmation token | changed paths + rollback reference | write-project, approval |
@@ -21,4 +21,4 @@ MCP = Model Context Protocol, a standard interface for connecting tools to an AI
 A model-facing MCP response is subject to the same disclosure restrictions as a cloud API prompt. Return structured counts and flags by default, not raw project content. Never include credentials or internal absolute paths. Local computational execution does **not** imply the complete flow is offline when connected to cloud AI.
 
 ## Out of scope for first MCP iteration
-Remote hosted deployment, public ChatGPT plugin marketplace, privileged execution of discovered MCP servers, auto-approval of changes.
+Remote hosted deployment, public ChatGPT plugin marketplace, privileged execution of discovered MCP servers, auto-approval of changes. Natural-language requirement interpretation remains out of scope; callers provide bounded structured requirements.

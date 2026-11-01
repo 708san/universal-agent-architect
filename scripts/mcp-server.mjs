@@ -69,6 +69,7 @@ function redactBlueprint(blueprint) {
     targetEdition: blueprint.targetEdition,
     targetVersion: blueprint.targetVersion,
     provenance: blueprint.provenance,
+    requirements: blueprint.requirements,
     agents: blueprint.agents,
     skills: blueprint.skills,
     reasons: blueprint.reasons,
@@ -77,13 +78,14 @@ function redactBlueprint(blueprint) {
   };
 }
 
-function runCli(args) {
+function runCli(args, requirements) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [cliPath, ...args], {
       cwd: root,
       env: { PATH: process.env.PATH ?? '' },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: [requirements ? 'pipe' : 'ignore', 'pipe', 'pipe'],
     });
+    if (requirements) child.stdin.end(JSON.stringify(requirements));
     let stdout = '';
     let stderrBytes = 0;
     let bytes = 0;
@@ -147,10 +149,18 @@ function buildServer() {
     inputSchema: z.object({
       target: z.enum(['codex', 'claude-code', 'gemini-cli', 'antigravity', 'chatgpt']).default('codex'),
       securityProfile: z.enum(['baseline', 'strict']).default('baseline'),
+      requirements: z.object({
+        goal: z.string().max(500).default(''),
+        constraints: z.array(z.string().max(300)).max(10).default([]),
+        requiredChecks: z.array(z.enum(['test', 'security', 'dependency', 'build', 'lint', 'typecheck'])).max(6).default([]),
+        allowNetwork: z.literal(false).default(false),
+      }).optional(),
     }),
-  }, async ({ target, securityProfile }) => {
+  }, async ({ target, securityProfile, requirements }) => {
     try {
-      const output = await runCli(['analyze', projectRoot, target, securityProfile, '--config', '--mcp-config']);
+      const args = ['analyze', projectRoot, target, securityProfile, '--config', '--mcp-config'];
+      if (requirements) args.push('--requirements-stdin');
+      const output = await runCli(args, requirements);
       return textResult({ projectScope: 'fixed-startup-project', blueprint: redactBlueprint(output.blueprint), facts: redactFacts(output) });
     } catch {
       return textResult({ error: 'Blueprint proposal failed safely.' }, true);

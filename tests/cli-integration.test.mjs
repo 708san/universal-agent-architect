@@ -34,6 +34,27 @@ test('CLI excludes private files, never modifies source and refuses overwrite', 
   } finally { await rm(root,{recursive:true,force:true}); }
 });
 
+test('CLI accepts bounded structured requirements through stdin', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'uaa-'));
+  const project = path.join(root, 'project');
+  try {
+    await mkdir(path.join(project, 'tests'), { recursive: true });
+    await writeFile(path.join(project, 'app.py'), 'print("hello")\n');
+    await writeFile(path.join(project, 'tests', 'test_app.py'), 'def test_app(): pass\n');
+    const requirements = JSON.stringify({
+      goal: 'Build a safe Python development agent',
+      constraints: ['No external API'],
+      requiredChecks: ['test', 'security'],
+      allowNetwork: false,
+    });
+    const analyze = spawnSync(process.execPath, [cli, 'analyze', project, 'codex', 'baseline', '--requirements-stdin'], { cwd: root, input: requirements, encoding: 'utf8' });
+    assert.equal(analyze.status, 0, analyze.stderr);
+    const output = JSON.parse(analyze.stdout);
+    assert.deepEqual(output.blueprint.requirements, JSON.parse(requirements));
+    assert.deepEqual(output.blueprint.skills.map(skill => skill.id), ['code-review', 'test-verification', 'security-verification']);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('CLI skips hidden directories and limits traversal depth', async () => {
   const root = await mkdtemp(path.join(tmpdir(),'uaa-'));
   const project = path.join(root,'project');

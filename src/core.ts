@@ -3,10 +3,13 @@ import { CLAUDE_CODE_SOURCE_URLS, renderClaudeArtifacts } from './claude-adapter
 import { GEMINI_CLI_SOURCE_URLS, renderGeminiArtifacts } from './gemini-adapter.js';
 import { ANTIGRAVITY_SOURCE_URLS, renderAntigravityArtifacts } from './antigravity-adapter.js';
 import { CHATGPT_SOURCE_URLS, renderChatgptArtifacts } from './chatgpt-adapter.js';
+import { formatProjectRequirements, normalizeProjectRequirements, validateProjectRequirements } from './requirements.js';
+import type { ProjectRequirements, RequirementCheck } from './requirements.js';
 
 export type Target = 'codex' | 'claude-code' | 'gemini-cli' | 'antigravity' | 'chatgpt';
 export type WorkType = 'coding';
 export type SecurityProfile = 'baseline' | 'strict';
+export type { ProjectRequirements, RequirementCheck } from './requirements.js';
 export type VerificationStatus = 'verified' | 'partial' | 'planned' | 'unknown' | 'unsupported' | 'experimental';
 export type SecurityCheck =
   | 'path-traversal'
@@ -59,6 +62,7 @@ export interface DesignRequest {
   needsReview?: boolean;
   independentWorkstreams?: number;
   securityProfile?: SecurityProfile;
+  requirements?: ProjectRequirements;
 }
 export interface BlueprintProvenance {
   registryVersion: '0.1';
@@ -74,6 +78,7 @@ export interface Blueprint {
   targetEdition: string;
   targetVersion: string;
   provenance: BlueprintProvenance;
+  requirements: ProjectRequirements;
   agents: { id: string; role: string }[];
   skills: { id: string; purpose: string }[];
   reasons: string[];
@@ -217,13 +222,14 @@ export function validateBlueprint(value: unknown): string[] {
   const problems: string[] = [];
   problems.push(...unknownKeys(value, [
     'schemaVersion', 'target', 'workType', 'targetEdition', 'targetVersion', 'provenance',
-    'agents', 'skills', 'reasons', 'warnings', 'security',
+    'requirements', 'agents', 'skills', 'reasons', 'warnings', 'security',
   ], 'Blueprint'));
   if (value.schemaVersion !== '0.1') problems.push('Blueprint schemaVersion must be 0.1.');
   if (!TARGETS.includes(value.target as Target)) problems.push('Blueprint target is unsupported or invalid.');
   if (value.workType !== 'coding') problems.push('Blueprint workType must be coding.');
   if (!isNonEmptyString(value.targetEdition)) problems.push('Blueprint targetEdition must be a non-empty string.');
   if (!isNonEmptyString(value.targetVersion)) problems.push('Blueprint targetVersion must be a non-empty string.');
+  problems.push(...validateProjectRequirements(value.requirements));
   if (!isRecord(value.provenance)) {
     problems.push('Blueprint provenance must be an object.');
   } else {
@@ -361,17 +367,28 @@ export function analyzeProject(input: ProjectInput): ProjectFacts {
 
 /** Deterministic architecture proposal. No model calls, filesystem access, or network. */
 export function proposeBlueprint(facts: ProjectFacts, req: DesignRequest): Blueprint {
+  const requirements = normalizeProjectRequirements(req.requirements);
   const skills: Blueprint['skills'] = [];
   const reasons = ['Use one main agent by default: additional agents increase cost and coordination complexity.'];
+  const addSkill = (id: string, purpose: string) => {
+    if (!skills.some(skill => skill.id === id)) skills.push({ id, purpose });
+  };
   if (req.needsReview) {
-    skills.push({ id: 'code-review', purpose: 'Review changes for correctness, regressions and security.' });
+    addSkill('code-review', 'Review changes for correctness, regressions and security.');
     reasons.push('Review requested: add a reusable review skill.');
   }
-  if (facts.hasTests) {
-    skills.push({ id: 'test-verification', purpose: 'Run existing tests and report evidence.' });
+  if (facts.hasTests || requirements.requiredChecks.includes('test')) {
+    addSkill('test-verification', 'Run existing tests and report evidence.');
     reasons.push('Reuse existing test infrastructure rather than inventing new commands.');
   } else {
     reasons.push('No tests detected: document testing gaps before adding test-runner instructions.');
+  }
+  if (requirements.requiredChecks.includes('security')) {
+    addSkill('security-verification', 'Run bounded offline security checks and report evidence.');
+    reasons.push('Security verification requested: add a bounded evidence workflow.');
+  }
+  if (requirements.goal || requirements.constraints.length || requirements.requiredChecks.length) {
+    reasons.push('Apply the structured project requirements as bounded context; security and approval rules remain authoritative.');
   }
   const agents: Blueprint['agents'] = [{ id: 'main', role: 'implementation' }];
   if ((req.independentWorkstreams ?? 1) >= 2) {
@@ -391,13 +408,13 @@ export function proposeBlueprint(facts: ProjectFacts, req: DesignRequest): Bluep
     warnings.push('Unknown security profile; defaulted to baseline.');
   }
   if (securityProfile === 'strict') {
-    skills.push({ id: 'security-verification', purpose: 'Run bounded offline security checks and report evidence without claiming runtime enforcement.' });
+    addSkill('security-verification', 'Run bounded offline security checks and report evidence without claiming runtime enforcement.');
     reasons.push('Strict profile requested: add a security verification workflow for bounded local evidence.');
   }
   const provenance = createBlueprintProvenance(req.target);
   return { schemaVersion: '0.1', target: req.target, workType: req.workType,
     targetEdition: provenance.targetEdition, targetVersion: provenance.targetVersion, provenance,
-    agents, skills, reasons, warnings, security: createSecurityRequirements(securityProfile) };
+    requirements, agents, skills, reasons, warnings, security: createSecurityRequirements(securityProfile) };
 }
 
 function skillMarkdown(id: string, purpose: string): string {
@@ -429,7 +446,7 @@ export function generateArtifacts(blueprint: Blueprint): GenerateResult {
       const skills = blueprint.skills.map(s => ({ path: `.agents/skills/${s.id}/SKILL.md`, content: skillMarkdown(s.id, s.purpose) }));
       const agents = blueprint.agents.length > 1 ? [{ path: '.codex/agents/reviewer.toml', content: 'name = "reviewer"\ndescription = "Read-only independent review of changed files."\ndeveloper_instructions = "Review for correctness and security. Never edit files. Never send private content to third parties."\n' }] : [];
       return [
-        { path: 'AGENTS.md', content: `# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Security profile: ${blueprint.security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.\n- Required security checks: ${blueprint.security.securityTests.join(', ')}.\n- Before edits, inspect existing instructions and present a diff.\n- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n` },
+        { path: 'AGENTS.md', content: `# Project instructions\n\n- Work within the approved project directory.\n- Do not send source or personal data to external services without explicit permission.\n- Security profile: ${blueprint.security.profile}. Network: deny. File writes: approval. Generated scripts: disabled.\n- Required security checks: ${blueprint.security.securityTests.join(', ')}.\n- Before edits, inspect existing instructions and present a diff.\n- Use a short-lived branch and a descriptive Conventional Commit for each coherent change.\n- Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.\n- Run only authorized tests; report verification honestly.\n${formatProjectRequirements(blueprint.requirements)}\n` },
         ...skills,
         ...agents,
       ];

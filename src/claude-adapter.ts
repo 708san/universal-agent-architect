@@ -1,4 +1,5 @@
 import type { Blueprint, GeneratedArtifact } from './core.js';
+import { formatProjectRequirements } from './requirements.js';
 
 export const CLAUDE_CODE_SOURCE_URLS = [
   'https://code.claude.com/docs/en/memory',
@@ -29,6 +30,7 @@ function instructionMarkdown(blueprint: Blueprint): string {
 - Use a short-lived branch and a descriptive Conventional Commit for each coherent change.
 - Do not commit, push, merge, rebase, force-push, reset, or delete history without explicit user approval.
 - Run only authorized tests and report verification honestly.
+${formatProjectRequirements(blueprint.requirements)}
 `;
 }
 

@@ -69,6 +69,40 @@ test('security profiles produce deterministic requirements and checks', () => {
   assert.ok(strict.security.securityTests.length > baseline.security.securityTests.length);
 });
 
+test('structured project requirements influence deterministic output without granting permissions', () => {
+  const facts = analyzeProject({ paths: ['src/app.py', 'tests/test_app.py'] });
+  const requirements = {
+    goal: 'Build a safe Python development agent',
+    constraints: ['No external API', 'Review changes before applying them'],
+    requiredChecks: ['test', 'security'],
+    allowNetwork: false,
+  };
+  const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding', requirements });
+  assert.deepEqual(blueprint.requirements, requirements);
+  assert.deepEqual(blueprint.skills.map(skill => skill.id), ['test-verification', 'security-verification']);
+  assert.equal(blueprint.security.network, 'deny');
+  assert.deepEqual(validateBlueprint(blueprint), []);
+  const output = generateArtifacts(blueprint);
+  const instructions = output.files.find(file => file.path === 'AGENTS.md')?.content ?? '';
+  assert.match(instructions, /Build a safe Python development agent/);
+  assert.match(instructions, /Security and approval rules/);
+  assert.doesNotMatch(instructions, /allowNetwork: true/);
+});
+
+test('structured project requirements fail closed for network enablement and oversized text', () => {
+  const facts = analyzeProject({ paths: [] });
+  assert.throws(() => proposeBlueprint(facts, {
+    target: 'codex',
+    workType: 'coding',
+    requirements: { goal: '', constraints: [], requiredChecks: [], allowNetwork: true },
+  }), /cannot enable network/);
+  assert.throws(() => proposeBlueprint(facts, {
+    target: 'codex',
+    workType: 'coding',
+    requirements: { goal: 'x'.repeat(501), constraints: [], requiredChecks: [], allowNetwork: false },
+  }), /bounded string/);
+});
+
 test('invalid security requirements fail closed during artifact generation', () => {
   const facts = analyzeProject({ paths: [] });
   const blueprint = proposeBlueprint(facts, { target: 'codex', workType: 'coding' });
