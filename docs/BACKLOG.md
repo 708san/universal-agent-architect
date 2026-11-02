@@ -1,7 +1,13 @@
 # Backlog and issue candidates — prioritized
 
-Status reviewed: 2026-11-01. Create GitHub issues only for the open work below; completed
+Status reviewed: 2026-11-02. Create GitHub issues only for the open work below; completed
 items are recorded as evidence and should not be recreated as duplicate issues.
+
+GitHub tracking: [#43 Codex runtime verification](https://github.com/708san/universal-agent-architect/issues/43),
+[#44 native MCP authorization evidence](https://github.com/708san/universal-agent-architect/issues/44),
+[#45 target runtime verification matrix](https://github.com/708san/universal-agent-architect/issues/45),
+[#47 explicit online specification refresh](https://github.com/708san/universal-agent-architect/issues/47),
+and [#46 consented cloud and local AI connectors](https://github.com/708san/universal-agent-architect/issues/46).
 
 ## Completed local foundation
 
