@@ -17,6 +17,6 @@
   "limitations": [
     "AGENTS.md injection was observed, but Skill runtime loading was not confirmed.",
     "Reviewer invocation succeeded, but its file access and read-only enforcement were not verified.",
-    "Permission enforcement and MCP behavior were not tested."
+    "A filesystem write approval prompt was observed and explicitly approved; command, network and MCP enforcement were not tested."
   ]
 }
