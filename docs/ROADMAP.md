@@ -6,7 +6,7 @@ No fabricated calendar deadlines. Progression is gated by working tests and veri
 - [x] Project overview, scope, security rules, Codex guidance, focused skills, specialist reviewers.
 - [x] Pure TS rule-based prototype, safe project inventory, Codex sample generator, tests, basic browser/CLI.
 - [x] Confirm CI on GitHub, publish the public repository by project decision, and commit a reviewed dependency lockfile.
-- [ ] Create or update GitHub issues for the remaining work (external Web action remains).
+- [x] Create or update GitHub issues for the remaining work: [#43](https://github.com/708san/universal-agent-architect/issues/43), [#44](https://github.com/708san/universal-agent-architect/issues/44), [#45](https://github.com/708san/universal-agent-architect/issues/45), [#46](https://github.com/708san/universal-agent-architect/issues/46), [#47](https://github.com/708san/universal-agent-architect/issues/47).
 - [x] Add fixture-based integration tests for CLI/browser convergence, scanner boundaries, dry-run output and planner decisions.
 - [x] Complete the offline prototype boundary: bounded scanner, browser CSP/no-network checks, ZIP import/export, staging and convergence fixtures.
 
