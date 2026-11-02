@@ -309,16 +309,17 @@ async function main() {
   const includeConfig = options.includes('--config') || (dryRun && command === 'generate');
   const includeMcpConfig = options.includes('--mcp-config');
   const requirementsStdin = options.includes('--requirements-stdin');
+  const reviewer = options.includes('--reviewer');
   const confirm = options.includes('--confirm');
   const stagingArgument = optionValue(options, '--staging');
   const rollbackId = optionValue(options, '--rollback-id');
   if (command !== 'analyze' && command !== 'generate') {
     if (command !== 'apply' && command !== 'rollback') {
-      console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run] [--ast] [--config] [--mcp-config] [--requirements-stdin]\n       node scripts/cli.mjs apply <project-dir> --staging=generated/project [--confirm]\n       node scripts/cli.mjs rollback <project-dir> --staging=generated/project --rollback-id=<id> [--confirm]');
+      console.log('Usage: npm run build && node scripts/cli.mjs analyze|generate <project-dir> [codex|other-target] [baseline|strict] [--dry-run] [--ast] [--config] [--mcp-config] [--requirements-stdin] [--reviewer]\n       node scripts/cli.mjs apply <project-dir> --staging=generated/project [--confirm]\n       node scripts/cli.mjs rollback <project-dir> --staging=generated/project --rollback-id=<id> [--confirm]');
       return;
     }
   }
-  const knownOptions = ['--dry-run', '--ast', '--config', '--mcp-config', '--confirm', '--requirements-stdin'];
+  const knownOptions = ['--dry-run', '--ast', '--config', '--mcp-config', '--confirm', '--requirements-stdin', '--reviewer'];
   if (options.some(option => !knownOptions.includes(option) && !option.startsWith('--staging=') && !option.startsWith('--rollback-id='))) throw new Error('Unsupported CLI option.');
   if (command === 'apply') {
     if (!stagingArgument || dryRun || includeAst || includeConfig || includeMcpConfig || requirementsStdin || rollbackId) throw new Error('Apply requires only --staging and optional --confirm.');
@@ -342,7 +343,14 @@ async function main() {
   const requirements = requirementsStdin ? await loadRequirementsFromStdin() : undefined;
   const input = await scan(abs, { includeAst, includeConfig, includeMcpConfig });
   const facts = analyzeProject(input);
-  const blueprint = proposeBlueprint(facts, { target, workType: 'coding', needsReview: true, securityProfile, requirements });
+  const blueprint = proposeBlueprint(facts, {
+    target,
+    workType: 'coding',
+    needsReview: true,
+    independentWorkstreams: reviewer ? 2 : 1,
+    securityProfile,
+    requirements,
+  });
   if (command === 'analyze') {
     const ast = includeAst ? await analyzeAstSources(input.astSources, { assets: astAssets }) : undefined;
     const existingConfig = includeConfig ? inspectExistingCodexConfig(input.configSources) : undefined;

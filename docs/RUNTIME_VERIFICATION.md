@@ -59,5 +59,15 @@ the statuses from actual target observations, and run `validate` before consider
 Creating this template does not launch Codex, another target runtime, a process, an MCP server or
 any network request.
 
+To include the optional read-only Codex reviewer subagent for subagent-format verification, add
+the explicit `--reviewer` option when generating the target files:
+
+```bash
+node scripts/cli.mjs generate examples/sample-python codex baseline --reviewer
+```
+
+Without `--reviewer`, UAA intentionally generates only the main agent. This keeps the default
+architecture minimal and avoids treating a reviewer as an implicit permission or runtime claim.
+
 The UAA offline check does not require Codex CLI or any other target CLI. A missing runtime is
 recorded as `not-tested`; it is never replaced with a guessed `verified` result.
