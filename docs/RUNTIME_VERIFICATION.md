@@ -4,7 +4,7 @@ UAA separates target format evidence from target runtime evidence. A valid `AGEN
 subagent file or plugin manifest does not prove that a host loads it or enforces its permissions.
 
 The metadata-only contract is [`runtime-verification-evidence-0.1.schema.json`](../schemas/runtime-verification-evidence-0.1.schema.json).
-The current offline fixture is [`runtime-evidence-codex-0.1.json`](../tests/fixtures/runtime-evidence-codex-0.1.json).
+The current partial Codex VS Code fixture is [`runtime-evidence-codex-0.1.json`](../tests/fixtures/runtime-evidence-codex-0.1.json).
 
 ## Evidence levels
 
@@ -24,7 +24,8 @@ a sandbox or a permission grant.
 3. Record only target, edition, version, date, capability statuses, evidence IDs and limitations.
 4. Do not store raw prompts, transcripts, source excerpts, absolute personal paths, tokens or MCP credentials.
 5. Test positive loading and negative/security behavior separately; do not treat a successful prompt as proof of isolation.
-6. Have a human review the evidence before changing compatibility status.
+6. Have a human review the evidence before changing compatibility status. The current Codex record is
+   still `unreviewed` and `partial`.
 
 ## Promotion into the capability registry
 
