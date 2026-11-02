@@ -26,5 +26,23 @@ a sandbox or a permission grant.
 5. Test positive loading and negative/security behavior separately; do not treat a successful prompt as proof of isolation.
 6. Have a human review the evidence before changing compatibility status.
 
+## Promotion into the capability registry
+
+Runtime evidence is not activated automatically. After a human has reviewed a complete record,
+run the local workflow from the repository root:
+
+```bash
+npm run build
+node scripts/promote-runtime-evidence.mjs validate --evidence=/path/to/evidence.json
+node scripts/promote-runtime-evidence.mjs diff --evidence=/path/to/evidence.json
+node scripts/promote-runtime-evidence.mjs apply --evidence=/path/to/evidence.json --confirm
+```
+
+Only `verified` evidence with `human-reviewed` status and `runtime-verified` results for every
+declared capability can be promoted. The workflow updates the selected target's registry entry and
+snapshot only; it does not copy raw limitations, prompts, transcripts, source, credentials or
+referenced files. `validate` and `diff` are read-only, and `apply` writes only after explicit
+`--confirm` using temporary files with rollback on a write failure.
+
 The UAA offline check does not require Codex CLI or any other target CLI. A missing runtime is
 recorded as `not-tested`; it is never replaced with a guessed `verified` result.

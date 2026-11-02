@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import os from 'node:os';
 import path from 'node:path';
-import { validateRuntimeEvidence } from '../dist/runtime-evidence.js';
+import { promoteRuntimeEvidence, validateRuntimeEvidence } from '../dist/runtime-evidence.js';
+import { validateCapabilityRegistry } from '../dist/capability-registry.js';
 
 const root = process.cwd();
 
@@ -29,4 +32,78 @@ test('runtime evidence rejects unsafe IDs and unbounded limitations', async () =
   const problems = validateRuntimeEvidence(invalid);
   assert.ok(problems.some(problem => problem.includes('safe IDs')));
   assert.ok(problems.some(problem => problem.includes('bounded single-line text')));
+});
+
+test('partial runtime evidence cannot be promoted', async () => {
+  const fixture = JSON.parse(await readFile(path.join(root, 'tests/fixtures/runtime-evidence-codex-0.1.json'), 'utf8'));
+  const registry = JSON.parse(await readFile(path.join(root, 'data/capability-registry-0.1.json'), 'utf8'));
+  const result = promoteRuntimeEvidence(registry, fixture);
+  assert.equal(result.candidate, undefined);
+  assert.ok(result.problems.some(problem => problem.includes('eligible for promotion')));
+});
+
+test('complete reviewed runtime evidence promotes only its target metadata', async () => {
+  const fixture = JSON.parse(await readFile(path.join(root, 'tests/fixtures/runtime-evidence-codex-0.1.json'), 'utf8'));
+  const registry = JSON.parse(await readFile(path.join(root, 'data/capability-registry-0.1.json'), 'utf8'));
+  const evidence = {
+    ...fixture,
+    edition: 'CLI/IDE',
+    version: '1.2.3',
+    verifiedAt: '2026-11-02',
+    overallStatus: 'verified',
+    reviewStatus: 'human-reviewed',
+    evidenceIds: ['runtime-smoke-001'],
+    capabilities: Object.fromEntries(Object.keys(fixture.capabilities).map(key => [key, 'runtime-verified'])),
+  };
+  const result = promoteRuntimeEvidence(registry, evidence);
+  assert.deepEqual(result.problems, []);
+  assert.equal(result.target, 'codex');
+  assert.ok(result.candidate);
+  const codex = result.candidate.entries.find(entry => entry.target === 'codex');
+  assert.equal(codex.status, 'verified');
+  assert.deepEqual(codex.capabilities, {
+    instructions: 'verified', skills: 'verified', subagents: 'verified', mcp: 'verified',
+  });
+  assert.deepEqual(codex.fixtureIds, registry.entries.find(entry => entry.target === 'codex').fixtureIds);
+  assert.match(codex.notes, /runtime-smoke-001/);
+  assert.match(codex.notes, /Renderer and validators cover documented/);
+  assert.equal(codex.notes.includes('private'), false);
+  assert.deepEqual(validateCapabilityRegistry(result.candidate, new Set(registry.entries.flatMap(entry => entry.fixtureIds))), []);
+  assert.equal(result.candidate.entries.find(entry => entry.target === 'chatgpt').status, 'partial');
+});
+
+test('promotion commands keep partial evidence read-only and require confirmation', async () => {
+  const registryPath = path.join(root, 'data/capability-registry-0.1.json');
+  const before = await readFile(registryPath, 'utf8');
+  const temp = await mkdtemp(path.join(os.tmpdir(), 'uaa-runtime-promotion-'));
+  const evidencePath = path.join(temp, 'evidence.json');
+  const fixture = await readFile(path.join(root, 'tests/fixtures/runtime-evidence-codex-0.1.json'), 'utf8');
+  await writeFile(evidencePath, fixture);
+  try {
+    const validation = spawnSync(process.execPath, ['scripts/promote-runtime-evidence.mjs', 'validate', `--evidence=${evidencePath}`], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(validation.status, 0);
+    assert.match(validation.stderr, /eligible for promotion/);
+    const diff = spawnSync(process.execPath, ['scripts/promote-runtime-evidence.mjs', 'diff', `--evidence=${evidencePath}`], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(diff.status, 0);
+    assert.match(diff.stderr, /eligible for promotion/);
+    const blocked = spawnSync(process.execPath, ['scripts/promote-runtime-evidence.mjs', 'apply', `--evidence=${evidencePath}`], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(blocked.status, 0);
+    assert.match(blocked.stderr, /--confirm/);
+    assert.equal(await readFile(registryPath, 'utf8'), before);
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+  }
+});
+
+test('promotion command rejects oversized evidence before parsing', async () => {
+  const temp = await mkdtemp(path.join(os.tmpdir(), 'uaa-runtime-promotion-large-'));
+  const evidencePath = path.join(temp, 'oversized.json');
+  await writeFile(evidencePath, `${' '.repeat(128 * 1024)}{}`);
+  try {
+    const run = spawnSync(process.execPath, ['scripts/promote-runtime-evidence.mjs', 'validate', `--evidence=${evidencePath}`], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(run.status, 0);
+    assert.match(run.stderr, /exceeds the 131072-byte limit/);
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+  }
 });
