@@ -19,6 +19,7 @@ test('metadata-only partial runtime evidence fixture is valid', async () => {
   assert.equal(fixture.capabilities.permissions, 'not-tested');
   assert.equal(fixture.reviewStatus, 'unreviewed');
   assert.ok(fixture.limitations.some(limitation => limitation.includes('filesystem write approval prompt')));
+  assert.ok(fixture.limitations.some(limitation => limitation.includes('explicit chat approval')));
 });
 
 test('runtime evidence template is deterministic and explicitly not-tested', () => {

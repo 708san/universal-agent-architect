@@ -13,10 +13,15 @@
     "mcp": "not-tested",
     "permissions": "not-tested"
   },
-  "evidenceIds": ["codex-vscode-instructions-2026-11-02", "codex-vscode-reviewer-invocation-2026-11-02"],
+  "evidenceIds": [
+    "codex-vscode-instructions-2026-11-02",
+    "codex-vscode-reviewer-invocation-2026-11-02",
+    "codex-vscode-command-approval-2026-11-02"
+  ],
   "limitations": [
     "AGENTS.md injection was observed, but Skill runtime loading was not confirmed.",
     "Reviewer invocation succeeded, but its file access and read-only enforcement were not verified.",
-    "A filesystem write approval prompt was observed and explicitly approved; command, network and MCP enforcement were not tested."
+    "A filesystem write approval prompt was observed and explicitly approved; command, network and MCP enforcement were not tested.",
+    "A harmless command ran after explicit chat approval; no separate host approval dialog was observable."
   ]
 }

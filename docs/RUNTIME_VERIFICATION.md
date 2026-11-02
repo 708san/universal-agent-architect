@@ -27,9 +27,9 @@ a sandbox or a permission grant.
 6. Have a human review the evidence before changing compatibility status. The current Codex record is
    still `unreviewed` and `partial`.
 
-The current Codex observation includes one approved filesystem-write prompt. This is only a
-partial permission observation; it does not establish command-execution, network, MCP or complete
-read-only enforcement.
+The current Codex observation includes one approved filesystem-write prompt and one harmless command
+that ran after explicit chat approval. These are partial consent observations; they do not establish
+host-level command-execution, network, MCP or complete read-only enforcement.
 
 ## Promotion into the capability registry
 
