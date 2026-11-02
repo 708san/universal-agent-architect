@@ -27,7 +27,10 @@ async function readEvidence(filePath) {
 }
 
 async function collectFiles(directory, relative = '') {
-  const entries = await readdir(directory, { withFileTypes: true });
+  const entries = await readdir(directory, { withFileTypes: true }).catch(error => {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  });
   const files = [];
   for (const entry of entries) {
     if (entry.isSymbolicLink()) continue;
