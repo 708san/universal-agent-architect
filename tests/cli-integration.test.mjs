@@ -28,6 +28,7 @@ test('CLI excludes private files, never modifies source and refuses overwrite', 
     assert.equal(first.status,0,first.stderr);
     assert.deepEqual((await readdir(project)).sort(),['.env.local','external-directory','external-symlink','requirements.txt','src'].sort());
     assert.match(await readFile(path.join(root,'generated','project','AGENTS.md'),'utf8'),/Project instructions/);
+    await assert.rejects(access(path.join(root, 'generated', 'project', '.codex', 'agents', 'reviewer.toml')));
     const second = spawnSync(process.execPath,[cli,'generate',project,'codex'],{cwd:root,encoding:'utf8'});
     assert.notEqual(second.status,0);
     assert.match(second.stderr,/Refusing overwrite/);
@@ -52,6 +53,24 @@ test('CLI accepts bounded structured requirements through stdin', async () => {
     const output = JSON.parse(analyze.stdout);
     assert.deepEqual(output.blueprint.requirements, JSON.parse(requirements));
     assert.deepEqual(output.blueprint.skills.map(skill => skill.id), ['code-review', 'test-verification', 'security-verification']);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('CLI reviewer option stages an explicit read-only Codex reviewer', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'uaa-reviewer-'));
+  const project = path.join(root, 'review-project');
+  try {
+    await mkdir(project, { recursive: true });
+    await writeFile(path.join(project, 'app.py'), 'print("hello")\n');
+    const run = spawnSync(process.execPath, [cli, 'generate', project, 'codex', 'baseline', '--reviewer'], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    const reviewer = await readFile(path.join(root, 'generated', 'review-project', '.codex', 'agents', 'reviewer.toml'), 'utf8');
+    assert.match(reviewer, /^name = "reviewer"$/m);
+    assert.match(reviewer, /^developer_instructions = /m);
+    for (const flag of ['shell_tool', 'apps', 'plugins', 'memories', 'request_permissions_tool']) {
+      assert.match(reviewer, new RegExp(`^features\\.${flag} = false$`, 'm'));
+    }
+    assert.doesNotMatch(reviewer, /https?:\/\//);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
