@@ -27,6 +27,10 @@ a sandbox or a permission grant.
 6. Have a human review the evidence before changing compatibility status. The current Codex record is
    still `unreviewed` and `partial`.
 
+The current Codex observation includes one approved filesystem-write prompt. This is only a
+partial permission observation; it does not establish command-execution, network, MCP or complete
+read-only enforcement.
+
 ## Promotion into the capability registry
 
 Runtime evidence is not activated automatically. After a human has reviewed a complete record,
