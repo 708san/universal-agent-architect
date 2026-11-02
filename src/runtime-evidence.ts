@@ -1,4 +1,9 @@
 import type { Target } from './core.js';
+import {
+  validateCapabilityRegistry,
+  type CapabilityEntry,
+  type CapabilityRegistry,
+} from './capability-registry.js';
 
 export const RUNTIME_EVIDENCE_CAPABILITIES = [
   'instructions', 'skills', 'subagents', 'mcp', 'permissions',
@@ -19,6 +24,12 @@ export interface RuntimeVerificationEvidence {
   capabilities: Record<RuntimeEvidenceCapability, RuntimeEvidenceCapabilityStatus>;
   evidenceIds: string[];
   limitations: string[];
+}
+
+export interface RuntimeEvidencePromotionResult {
+  candidate?: CapabilityRegistry;
+  target?: RuntimeVerificationEvidence['target'];
+  problems: string[];
 }
 
 const TARGETS: Target[] = ['codex', 'claude-code', 'gemini-cli', 'antigravity', 'chatgpt'];
@@ -103,4 +114,64 @@ export function validateRuntimeEvidence(value: unknown): string[] {
     problems.push('Runtime evidence limitations must be bounded single-line text.');
   }
   return problems;
+}
+
+/**
+ * Promote complete, reviewed runtime metadata into a registry candidate.
+ * Evidence references are identifiers only; this function never reads or executes them.
+ */
+export function promoteRuntimeEvidence(
+  registry: CapabilityRegistry,
+  evidence: unknown,
+): RuntimeEvidencePromotionResult {
+  const problems = [
+    ...validateCapabilityRegistry(registry),
+    ...validateRuntimeEvidence(evidence),
+  ];
+  if (problems.length) return { problems };
+
+  const verified = evidence as RuntimeVerificationEvidence;
+  const allRuntimeVerified = RUNTIME_EVIDENCE_CAPABILITIES.every(
+    capability => verified.capabilities[capability] === 'runtime-verified',
+  );
+  if (verified.overallStatus !== 'verified'
+    || verified.reviewStatus !== 'human-reviewed'
+    || !allRuntimeVerified) {
+    return {
+      target: verified.target,
+      problems: ['Runtime evidence is not eligible for promotion: complete human-reviewed runtime verification is required.'],
+    };
+  }
+
+  const currentEntry = registry.entries.find(entry => entry.target === verified.target);
+  if (!currentEntry) {
+    return { target: verified.target, problems: [`Capability registry has no entry for ${verified.target}.`] };
+  }
+
+  const promotedEntry: CapabilityEntry = {
+    ...currentEntry,
+    edition: verified.edition,
+    version: verified.version,
+    checkedAt: verified.verifiedAt,
+    status: 'verified',
+    capabilities: {
+      ...currentEntry.capabilities,
+      instructions: 'verified',
+      skills: 'verified',
+      subagents: 'verified',
+      mcp: 'verified',
+    },
+    notes: [
+      currentEntry.notes,
+      `Runtime evidence reviewed: ${verified.evidenceIds.join(', ')}.`,
+    ].filter(Boolean).join(' '),
+  };
+  const candidate: CapabilityRegistry = {
+    ...registry,
+    checkedAt: verified.verifiedAt,
+    entries: registry.entries.map(entry => entry.target === verified.target ? promotedEntry : entry),
+  };
+  const candidateProblems = validateCapabilityRegistry(candidate);
+  if (candidateProblems.length) return { target: verified.target, problems: candidateProblems };
+  return { candidate, target: verified.target, problems: [] };
 }
