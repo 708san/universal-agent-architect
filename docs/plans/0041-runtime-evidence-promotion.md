@@ -47,4 +47,4 @@ Reverting the single feature commit restores the previous registry workflow.
 - [x] Implement pure promotion and guarded script.
 - [x] Add regression tests and documentation.
 - [x] Run checks and review the complete diff.
-- [ ] Commit and open a PR.
+- [x] Commit and open a PR.
