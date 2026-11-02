@@ -44,5 +44,20 @@ snapshot only; it does not copy raw limitations, prompts, transcripts, source, c
 referenced files. `validate` and `diff` are read-only, and `apply` writes only after explicit
 `--confirm` using temporary files with rollback on a write failure.
 
+## Prepare a manual verification record
+
+UAA can stage a blank record without claiming that any target behavior was tested:
+
+```bash
+npm run build
+npm run runtime-evidence-template -- --target=codex --edition=CLI/IDE --version=unknown --date=2026-11-02
+```
+
+The file is created under `generated/`, refuses traversal and overwrite, and starts with every
+capability as `not-tested`. Copy it only to a disposable, secret-free verification workflow, fill
+the statuses from actual target observations, and run `validate` before considering promotion.
+Creating this template does not launch Codex, another target runtime, a process, an MCP server or
+any network request.
+
 The UAA offline check does not require Codex CLI or any other target CLI. A missing runtime is
 recorded as `not-tested`; it is never replaced with a guessed `verified` result.

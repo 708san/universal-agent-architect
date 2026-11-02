@@ -4,7 +4,7 @@ import { readFile, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
-import { promoteRuntimeEvidence, validateRuntimeEvidence } from '../dist/runtime-evidence.js';
+import { createRuntimeEvidenceTemplate, promoteRuntimeEvidence, validateRuntimeEvidence } from '../dist/runtime-evidence.js';
 import { validateCapabilityRegistry } from '../dist/capability-registry.js';
 
 const root = process.cwd();
@@ -14,6 +14,19 @@ test('metadata-only partial runtime evidence fixture is valid', async () => {
   assert.deepEqual(validateRuntimeEvidence(fixture), []);
   assert.equal(fixture.overallStatus, 'partial');
   assert.equal(fixture.capabilities.permissions, 'not-tested');
+});
+
+test('runtime evidence template is deterministic and explicitly not-tested', () => {
+  const template = createRuntimeEvidenceTemplate({
+    target: 'codex', edition: 'CLI/IDE', version: 'unknown', verifiedAt: '2026-11-02',
+  });
+  assert.deepEqual(validateRuntimeEvidence(template), []);
+  assert.equal(template.overallStatus, 'not-tested');
+  assert.equal(template.reviewStatus, 'unreviewed');
+  assert.deepEqual(template.capabilities, {
+    instructions: 'not-tested', skills: 'not-tested', subagents: 'not-tested', mcp: 'not-tested', permissions: 'not-tested',
+  });
+  assert.deepEqual(template.evidenceIds, ['codex-runtime-verification']);
 });
 
 test('runtime evidence cannot claim verified without complete reviewed runtime evidence', async () => {
@@ -105,5 +118,38 @@ test('promotion command rejects oversized evidence before parsing', async () => 
     assert.match(run.stderr, /exceeds the 131072-byte limit/);
   } finally {
     await rm(temp, { recursive: true, force: true });
+  }
+});
+
+test('runtime evidence template command stages safely and refuses traversal or overwrite', async () => {
+  const stage = `generated/runtime-evidence-test-${process.pid}`;
+  const output = `${stage}/codex.json`;
+  const outputPath = path.join(root, output);
+  try {
+    const run = spawnSync(process.execPath, [
+      'scripts/create-runtime-evidence-template.mjs',
+      '--target=codex', '--edition=CLI/IDE', '--version=unknown', '--date=2026-11-02',
+      `--output=${output}`,
+    ], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    const created = JSON.parse(await readFile(outputPath, 'utf8'));
+    assert.equal(created.overallStatus, 'not-tested');
+    const overwrite = spawnSync(process.execPath, [
+      'scripts/create-runtime-evidence-template.mjs',
+      '--target=codex', '--edition=CLI/IDE', '--version=unknown', '--date=2026-11-02',
+      `--output=${output}`,
+    ], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(overwrite.status, 0);
+    assert.match(overwrite.stderr, /Refusing overwrite/);
+    const traversal = spawnSync(process.execPath, [
+      'scripts/create-runtime-evidence-template.mjs',
+      '--target=codex', '--edition=CLI/IDE', '--version=unknown', '--date=2026-11-02',
+      '--output=generated/../runtime-evidence-outside.json',
+    ], { cwd: root, encoding: 'utf8' });
+    assert.notEqual(traversal.status, 0);
+    assert.match(traversal.stderr, /inside generated/);
+  } finally {
+    await rm(path.join(root, stage), { recursive: true, force: true });
+    await rm(path.join(root, 'runtime-evidence-outside.json'), { force: true });
   }
 });

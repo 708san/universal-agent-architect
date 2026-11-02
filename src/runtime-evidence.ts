@@ -8,6 +8,9 @@ import {
 export const RUNTIME_EVIDENCE_CAPABILITIES = [
   'instructions', 'skills', 'subagents', 'mcp', 'permissions',
 ] as const;
+export const RUNTIME_EVIDENCE_TARGETS = [
+  'codex', 'claude-code', 'gemini-cli', 'antigravity', 'chatgpt',
+] as const;
 export type RuntimeEvidenceCapability = typeof RUNTIME_EVIDENCE_CAPABILITIES[number];
 export type RuntimeEvidenceCapabilityStatus = 'not-tested' | 'format-verified' | 'runtime-verified' | 'failed';
 export type RuntimeEvidenceOverallStatus = 'not-tested' | 'partial' | 'verified' | 'failed';
@@ -32,7 +35,15 @@ export interface RuntimeEvidencePromotionResult {
   problems: string[];
 }
 
-const TARGETS: Target[] = ['codex', 'claude-code', 'gemini-cli', 'antigravity', 'chatgpt'];
+export interface RuntimeEvidenceTemplateInput {
+  target: Target;
+  edition: string;
+  version: string;
+  verifiedAt: string;
+  evidenceId?: string;
+}
+
+const TARGETS: Target[] = [...RUNTIME_EVIDENCE_TARGETS];
 const CAPABILITY_STATUSES: RuntimeEvidenceCapabilityStatus[] = ['not-tested', 'format-verified', 'runtime-verified', 'failed'];
 const OVERALL_STATUSES: RuntimeEvidenceOverallStatus[] = ['not-tested', 'partial', 'verified', 'failed'];
 const REVIEW_STATUSES: RuntimeEvidenceReviewStatus[] = ['unreviewed', 'human-reviewed'];
@@ -41,6 +52,24 @@ const SAFE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_LIMITATIONS = 10;
 const MAX_LIMITATION_LENGTH = 500;
 const MAX_EVIDENCE_IDS = 32;
+
+/** Create a deterministic, explicitly not-tested evidence record for manual completion. */
+export function createRuntimeEvidenceTemplate(input: RuntimeEvidenceTemplateInput): RuntimeVerificationEvidence {
+  return {
+    schemaVersion: '0.1',
+    target: input.target,
+    edition: input.edition,
+    version: input.version,
+    verifiedAt: input.verifiedAt,
+    overallStatus: 'not-tested',
+    reviewStatus: 'unreviewed',
+    capabilities: Object.fromEntries(
+      RUNTIME_EVIDENCE_CAPABILITIES.map(capability => [capability, 'not-tested']),
+    ) as Record<RuntimeEvidenceCapability, RuntimeEvidenceCapabilityStatus>,
+    evidenceIds: [input.evidenceId ?? `${input.target}-runtime-verification`],
+    limitations: ['Runtime behavior has not been tested.'],
+  };
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
