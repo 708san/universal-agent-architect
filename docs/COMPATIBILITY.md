@@ -19,6 +19,9 @@ fixtures and security regression tests, but no target runtime is upgraded to `ve
 independent runtime-specific evidence record. The offline test suite does not require Codex CLI or
 any other target CLI.
 
+Runtime evidence records follow [`RUNTIME_VERIFICATION.md`](RUNTIME_VERIFICATION.md) and
+[`runtime-verification-evidence-0.1.schema.json`](../schemas/runtime-verification-evidence-0.1.schema.json).
+
 ## Current Codex evidence
 
 The prototype now validates the documented file shapes for `AGENTS.md`, Agent Skills and project-scoped
