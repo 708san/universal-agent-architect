@@ -13,7 +13,11 @@ test('metadata-only partial runtime evidence fixture is valid', async () => {
   const fixture = JSON.parse(await readFile(path.join(root, 'tests/fixtures/runtime-evidence-codex-0.1.json'), 'utf8'));
   assert.deepEqual(validateRuntimeEvidence(fixture), []);
   assert.equal(fixture.overallStatus, 'partial');
+  assert.equal(fixture.capabilities.instructions, 'runtime-verified');
+  assert.equal(fixture.capabilities.subagents, 'runtime-verified');
+  assert.equal(fixture.capabilities.skills, 'not-tested');
   assert.equal(fixture.capabilities.permissions, 'not-tested');
+  assert.equal(fixture.reviewStatus, 'unreviewed');
 });
 
 test('runtime evidence template is deterministic and explicitly not-tested', () => {

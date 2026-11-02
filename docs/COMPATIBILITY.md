@@ -14,10 +14,11 @@ Gemini CLI Skills/subagent documentation, Google Antigravity rules/Skills/subage
 and OpenAI portable plugin documentation. This confirms documented file formats and discovery
 guidance only; it does not prove that UAA-generated files load or enforce permissions in each runtime.
 
-Current local evidence remains format-level and offline: generated artifacts pass target validators,
-fixtures and security regression tests, but no target runtime is upgraded to `verified` without an
-independent runtime-specific evidence record. The offline test suite does not require Codex CLI or
-any other target CLI.
+Current local evidence is mostly format-level and offline. A user-provided, unreviewed Codex VS Code
+observation now records `AGENTS.md` injection and successful reviewer invocation, while Skill runtime
+loading, reviewer file access, permission enforcement and MCP behavior remain unverified. No target
+runtime is upgraded to `verified` without complete runtime-specific evidence. The offline test suite
+does not require Codex CLI or any other target CLI.
 
 Runtime evidence records follow [`RUNTIME_VERIFICATION.md`](RUNTIME_VERIFICATION.md) and
 [`runtime-verification-evidence-0.1.schema.json`](../schemas/runtime-verification-evidence-0.1.schema.json).
@@ -26,8 +27,9 @@ Runtime evidence records follow [`RUNTIME_VERIFICATION.md`](RUNTIME_VERIFICATION
 
 The prototype now validates the documented file shapes for `AGENTS.md`, Agent Skills and project-scoped
 custom agents under `.codex/agents/*.toml`. The fixture is [`codex-adapter-0.1.json`](../tests/fixtures/codex-adapter-0.1.json).
-This is format-level evidence only: the repository does not launch Codex to prove runtime discovery,
-permission inheritance or actual Skill execution. The target therefore remains **partial**.
+Format-level evidence is supplemented by a partial, unreviewed VS Code observation recorded in the
+Runtime Evidence fixture. The repository still does not claim permission enforcement, Skill runtime
+loading, MCP behavior or complete subagent isolation. The target therefore remains **partial**.
 
 | Target | Local project instruction | Skill | Custom subagent | MCP | Renderer in prototype |
 |---|---|---|---|---|---|

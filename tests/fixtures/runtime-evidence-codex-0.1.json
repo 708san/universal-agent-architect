@@ -1,20 +1,22 @@
 {
   "schemaVersion": "0.1",
   "target": "codex",
-  "edition": "CLI/IDE",
+  "edition": "VS Code IDE",
   "version": "unknown",
-  "verifiedAt": "2026-11-01",
+  "verifiedAt": "2026-11-02",
   "overallStatus": "partial",
   "reviewStatus": "unreviewed",
   "capabilities": {
-    "instructions": "format-verified",
-    "skills": "format-verified",
-    "subagents": "format-verified",
+    "instructions": "runtime-verified",
+    "skills": "not-tested",
+    "subagents": "runtime-verified",
     "mcp": "not-tested",
     "permissions": "not-tested"
   },
-  "evidenceIds": ["codex-adapter-0-1"],
+  "evidenceIds": ["codex-vscode-instructions-2026-11-02", "codex-vscode-reviewer-invocation-2026-11-02"],
   "limitations": [
-    "Runtime loading, permission enforcement and MCP behavior were not tested."
+    "AGENTS.md injection was observed, but Skill runtime loading was not confirmed.",
+    "Reviewer invocation succeeded, but its file access and read-only enforcement were not verified.",
+    "Permission enforcement and MCP behavior were not tested."
   ]
 }
