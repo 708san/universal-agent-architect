@@ -3,7 +3,7 @@
   "target": "codex",
   "edition": "VS Code IDE",
   "version": "unknown",
-  "verifiedAt": "2026-11-03",
+  "verifiedAt": "2026-11-04",
   "overallStatus": "partial",
   "reviewStatus": "unreviewed",
   "capabilities": {
@@ -19,7 +19,8 @@
     "codex-vscode-command-approval-2026-11-02",
     "codex-vscode-mcp-redaction-2026-11-03",
     "codex-vscode-mcp-denial-2026-11-03",
-    "codex-vscode-write-denial-2026-11-03"
+    "codex-vscode-write-denial-2026-11-03",
+    "codex-vscode-command-denial-2026-11-04"
   ],
   "limitations": [
     "AGENTS.md injection was observed, but Skill runtime loading was not confirmed.",
@@ -28,6 +29,7 @@
     "A harmless command ran after explicit chat approval; no separate host approval dialog was observable.",
     "Codex connected to UAA's fixed-project MCP server; three bounded tools returned redacted metadata without source or credentials.",
     "After MCP tool-call denial, analyze_project was not executed; the separate host approval UI was not independently distinguished from the assistant's confirmation text.",
-    "A filesystem write request was denied and the target file was confirmed absent; command and network enforcement remain untested."
+    "A filesystem write request was denied and the target file was confirmed absent; network enforcement remains untested.",
+    "A command execution request was denied before launch; the marker output was not emitted."
   ]
 }
